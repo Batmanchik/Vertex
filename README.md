@@ -1,4 +1,4 @@
-# Cheops AI (Multi-Channel Fraud Intelligence System)
+# Vertex (Multi-Channel Fraud Intelligence System)
 
 Vertex is a local MVP for detection of multi-channel financial fraud patterns (legal + crypto).
 It combines ML risk scoring, ETL for transaction logs, a FastAPI backend, and a Streamlit multipage frontend.
