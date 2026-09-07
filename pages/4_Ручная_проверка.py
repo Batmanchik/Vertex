@@ -46,7 +46,7 @@ from apris.population_map import (
 )
 from apris.risk_engine import OPERATIONAL_INPUT_BOUNDS, operational_to_features
 
-st.set_page_config(page_title="Ручная проверка | Cheops AI", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Ручная проверка | Vertex", page_icon="🔍", layout="wide")
 
 FEATURE_LABELS = {
     "growth_rate": "Темп роста вкладчиков",
@@ -213,7 +213,13 @@ else:
 # ── Оценка ────────────────────────────────────────────────────────
 if st.button("Оценить объект", type="primary", use_container_width=True):
     try:
-        st.session_state["manual_result"] = api_client.predict_from_features(features)
+        result = api_client.predict_from_features(features)
+        if result.get("source") == "local":
+            st.caption(
+                "Локальный расчёт: сервис не запущен, оценку посчитала та же функция, "
+                "что вызывает API."
+            )
+        st.session_state["manual_result"] = result
         st.session_state["manual_explain"] = api_client.explain_features(features, top_k=5)
         st.session_state["manual_features"] = dict(features)
         st.session_state.pop("manual_error", None)

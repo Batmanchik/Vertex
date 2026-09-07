@@ -1,0 +1,1038 @@
+{
+  "detector": "forest-v1",
+  "generated_at": "2026-09-06T08:01:45+00:00",
+  "results": [
+    {
+      "candidates": 164,
+      "cost": "nothing: one source, one ATM",
+      "funders": 1,
+      "key": "naive",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.9912984006734008,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 60,
+        "reaching_grip": 60
+      },
+      "seed": 20261005,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.963105021933031,
+          "base_rate": 0.2797749296655205,
+          "coverage": 0.6254367575122292,
+          "positives": 895,
+          "recall_at_budget": 0.3565804274465692,
+          "roc_auc": 0.9819498448520707,
+          "rows": 3199,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9991996798719488,
+          "base_rate": 0.35365853658536583,
+          "coverage": 1.0,
+          "positives": 58,
+          "recall_at_budget": 0.22448979591836735,
+          "roc_auc": 0.9993521218011013,
+          "rows": 164,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 172,
+      "cost": "nothing: one source, one ATM",
+      "funders": 1,
+      "key": "naive",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.9736501924001923,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 60,
+        "reaching_grip": 60
+      },
+      "seed": 20261006,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.8392007713928308,
+          "base_rate": 0.22176308539944903,
+          "coverage": 0.5930018416206262,
+          "positives": 644,
+          "recall_at_budget": 0.4521193092621664,
+          "roc_auc": 0.9366674342153611,
+          "rows": 2904,
+          "unit": "account"
+        },
+        {
+          "average_precision": 1.0,
+          "base_rate": 0.3430232558139535,
+          "coverage": 1.0,
+          "positives": 59,
+          "recall_at_budget": 0.22641509433962265,
+          "roc_auc": 0.9999999999999999,
+          "rows": 172,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 165,
+      "cost": "nothing: one source, one ATM",
+      "funders": 1,
+      "key": "naive",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.9912037037037038,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 60,
+        "reaching_grip": 60
+      },
+      "seed": 20261007,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.8461240445008331,
+          "base_rate": 0.25210902011680725,
+          "coverage": 0.6322213181448332,
+          "positives": 777,
+          "recall_at_budget": 0.3963730569948187,
+          "roc_auc": 0.9324106512011304,
+          "rows": 3082,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9995374653098982,
+          "base_rate": 0.3515151515151515,
+          "coverage": 1.0,
+          "positives": 58,
+          "recall_at_budget": 0.2391304347826087,
+          "roc_auc": 0.9996894409937889,
+          "rows": 165,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 179,
+      "cost": "a second account holding real money",
+      "funders": 2,
+      "key": "f2",
+      "overlap": {
+        "best": 0.9215686274509803,
+        "mean": 0.6855046828191862,
+        "median": 0.7071428571428571,
+        "networks": 60,
+        "reaching_coverage": 56,
+        "reaching_grip": 58
+      },
+      "seed": 20261005,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9481855373777757,
+          "base_rate": 0.28778979907264296,
+          "coverage": 0.6198402130492676,
+          "positives": 931,
+          "recall_at_budget": 0.3481561822125813,
+          "roc_auc": 0.9749501690044113,
+          "rows": 3235,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9146664396359254,
+          "base_rate": 0.31843575418994413,
+          "coverage": 0.9333333333333333,
+          "positives": 57,
+          "recall_at_budget": 0.26785714285714285,
+          "roc_auc": 0.9534632034632035,
+          "rows": 179,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 181,
+      "cost": "a second account holding real money",
+      "funders": 2,
+      "key": "f2",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.7535713536200387,
+        "median": 0.8333333333333334,
+        "networks": 60,
+        "reaching_coverage": 57,
+        "reaching_grip": 59
+      },
+      "seed": 20261006,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.8524876361419581,
+          "base_rate": 0.25191858525191857,
+          "coverage": 0.60207336523126,
+          "positives": 755,
+          "recall_at_budget": 0.396,
+          "roc_auc": 0.9390259176029963,
+          "rows": 2997,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9041622640054495,
+          "base_rate": 0.3425414364640884,
+          "coverage": 0.95,
+          "positives": 62,
+          "recall_at_budget": 0.21153846153846154,
+          "roc_auc": 0.9607793522267207,
+          "rows": 181,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 175,
+      "cost": "a second account holding real money",
+      "funders": 2,
+      "key": "f2",
+      "overlap": {
+        "best": 0.9444444444444444,
+        "mean": 0.7503691653997446,
+        "median": 0.8333333333333334,
+        "networks": 60,
+        "reaching_coverage": 59,
+        "reaching_grip": 59
+      },
+      "seed": 20261007,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.92892538831315,
+          "base_rate": 0.29996948428440645,
+          "coverage": 0.6570855614973262,
+          "positives": 983,
+          "recall_at_budget": 0.3323108384458078,
+          "roc_auc": 0.9652066589249837,
+          "rows": 3277,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9659689534247189,
+          "base_rate": 0.37142857142857144,
+          "coverage": 0.9833333333333333,
+          "positives": 65,
+          "recall_at_budget": 0.23529411764705882,
+          "roc_auc": 0.9739457426806339,
+          "rows": 175,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 198,
+      "cost": "three funded accounts",
+      "funders": 3,
+      "key": "f3",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.471492096088388,
+        "median": 0.5,
+        "networks": 60,
+        "reaching_coverage": 31,
+        "reaching_grip": 52
+      },
+      "seed": 20261005,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9305630882468878,
+          "base_rate": 0.22346179851250844,
+          "coverage": 0.583922261484099,
+          "positives": 661,
+          "recall_at_budget": 0.4500768049155146,
+          "roc_auc": 0.9721380417033205,
+          "rows": 2958,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.8160566564424985,
+          "base_rate": 0.15151515151515152,
+          "coverage": 0.5166666666666667,
+          "positives": 30,
+          "recall_at_budget": 0.46153846153846156,
+          "roc_auc": 0.9348852901484481,
+          "rows": 198,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 185,
+      "cost": "three funded accounts",
+      "funders": 3,
+      "key": "f3",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.6087125351121105,
+        "median": 0.5916666666666667,
+        "networks": 60,
+        "reaching_coverage": 45,
+        "reaching_grip": 56
+      },
+      "seed": 20261006,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9305598408600583,
+          "base_rate": 0.3113064565019703,
+          "coverage": 0.6562300319488817,
+          "positives": 1027,
+          "recall_at_budget": 0.3215339233038348,
+          "roc_auc": 0.9630434517541911,
+          "rows": 3299,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9132463527031268,
+          "base_rate": 0.23243243243243245,
+          "coverage": 0.75,
+          "positives": 43,
+          "recall_at_budget": 0.3076923076923077,
+          "roc_auc": 0.960573476702509,
+          "rows": 185,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 180,
+      "cost": "three funded accounts",
+      "funders": 3,
+      "key": "f3",
+      "overlap": {
+        "best": 0.9333333333333333,
+        "mean": 0.5467573275242056,
+        "median": 0.5714285714285714,
+        "networks": 60,
+        "reaching_coverage": 44,
+        "reaching_grip": 53
+      },
+      "seed": 20261007,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.8828483182694772,
+          "base_rate": 0.2534291312867407,
+          "coverage": 0.637633525061627,
+          "positives": 776,
+          "recall_at_budget": 0.3893229166666667,
+          "roc_auc": 0.9505901784404341,
+          "rows": 3062,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.772202075824242,
+          "base_rate": 0.2388888888888889,
+          "coverage": 0.7333333333333333,
+          "positives": 43,
+          "recall_at_budget": 0.35714285714285715,
+          "roc_auc": 0.864406779661017,
+          "rows": 180,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 186,
+      "cost": "four funded accounts",
+      "funders": 4,
+      "key": "f4",
+      "overlap": {
+        "best": 0.9069767441860465,
+        "mean": 0.38690558011515935,
+        "median": 0.3798076923076923,
+        "networks": 60,
+        "reaching_coverage": 19,
+        "reaching_grip": 46
+      },
+      "seed": 20261005,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9066061683254459,
+          "base_rate": 0.26409684612934053,
+          "coverage": 0.6181953765846383,
+          "positives": 829,
+          "recall_at_budget": 0.37880633373934225,
+          "roc_auc": 0.9572875594544684,
+          "rows": 3139,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.7043811580576287,
+          "base_rate": 0.10215053763440861,
+          "coverage": 0.31666666666666665,
+          "positives": 19,
+          "recall_at_budget": 0.5882352941176471,
+          "roc_auc": 0.950383631713555,
+          "rows": 186,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 186,
+      "cost": "four funded accounts",
+      "funders": 4,
+      "key": "f4",
+      "overlap": {
+        "best": 0.8983050847457628,
+        "mean": 0.4303252284849591,
+        "median": 0.4392857142857143,
+        "networks": 60,
+        "reaching_coverage": 26,
+        "reaching_grip": 47
+      },
+      "seed": 20261006,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9050140210566593,
+          "base_rate": 0.29424709210939953,
+          "coverage": 0.6397812713602188,
+          "positives": 936,
+          "recall_at_budget": 0.3401506996770721,
+          "roc_auc": 0.9494530779953093,
+          "rows": 3181,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.7393201415410471,
+          "base_rate": 0.13440860215053763,
+          "coverage": 0.43333333333333335,
+          "positives": 25,
+          "recall_at_budget": 0.3333333333333333,
+          "roc_auc": 0.92002442002442,
+          "rows": 186,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 200,
+      "cost": "four funded accounts",
+      "funders": 4,
+      "key": "f4",
+      "overlap": {
+        "best": 0.8596491228070176,
+        "mean": 0.4020546186138441,
+        "median": 0.4330357142857143,
+        "networks": 60,
+        "reaching_coverage": 23,
+        "reaching_grip": 48
+      },
+      "seed": 20261007,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9212089297223982,
+          "base_rate": 0.26750972762645914,
+          "coverage": 0.6316998468606432,
+          "positives": 825,
+          "recall_at_budget": 0.37286063569682154,
+          "roc_auc": 0.9666761361777491,
+          "rows": 3084,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.41935735305682453,
+          "base_rate": 0.105,
+          "coverage": 0.38333333333333336,
+          "positives": 21,
+          "recall_at_budget": 0.25,
+          "roc_auc": 0.717741935483871,
+          "rows": 200,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 184,
+      "cost": "six funded accounts",
+      "funders": 6,
+      "key": "f6",
+      "overlap": {
+        "best": 0.859375,
+        "mean": 0.20287417164668112,
+        "median": 0.22252747252747251,
+        "networks": 60,
+        "reaching_coverage": 3,
+        "reaching_grip": 36
+      },
+      "seed": 20261005,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9108004893411209,
+          "base_rate": 0.26215780998389693,
+          "coverage": 0.6161998485995458,
+          "positives": 814,
+          "recall_at_budget": 0.3811881188118812,
+          "roc_auc": 0.9609580523269718,
+          "rows": 3105,
+          "unit": "account"
+        },
+        {
+          "average_precision": null,
+          "base_rate": 0.016304347826086956,
+          "coverage": 0.05,
+          "positives": 3,
+          "recall_at_budget": null,
+          "roc_auc": null,
+          "rows": 184,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 184,
+      "cost": "six funded accounts",
+      "funders": 6,
+      "key": "f6",
+      "overlap": {
+        "best": 0.7804878048780488,
+        "mean": 0.2185246318988365,
+        "median": 0.22252747252747251,
+        "networks": 60,
+        "reaching_coverage": 7,
+        "reaching_grip": 36
+      },
+      "seed": 20261006,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9165774022954528,
+          "base_rate": 0.22902338376891335,
+          "coverage": 0.5888594164456233,
+          "positives": 666,
+          "recall_at_budget": 0.4376899696048632,
+          "roc_auc": 0.9696673049599895,
+          "rows": 2908,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.5603030303030303,
+          "base_rate": 0.03804347826086957,
+          "coverage": 0.11666666666666667,
+          "positives": 7,
+          "recall_at_budget": 0.5,
+          "roc_auc": 0.7875,
+          "rows": 184,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 177,
+      "cost": "six funded accounts",
+      "funders": 6,
+      "key": "f6",
+      "overlap": {
+        "best": 0.8584070796460177,
+        "mean": 0.2289971985920645,
+        "median": 0.2403846153846154,
+        "networks": 60,
+        "reaching_coverage": 8,
+        "reaching_grip": 34
+      },
+      "seed": 20261007,
+      "terminals": 1,
+      "units": [
+        {
+          "average_precision": 0.9470579398361053,
+          "base_rate": 0.2616731517509728,
+          "coverage": 0.619815668202765,
+          "positives": 807,
+          "recall_at_budget": 0.3844221105527638,
+          "roc_auc": 0.9775853094980201,
+          "rows": 3084,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.7305555555555555,
+          "base_rate": 0.04519774011299435,
+          "coverage": 0.13333333333333333,
+          "positives": 8,
+          "recall_at_budget": 0.8333333333333334,
+          "roc_auc": 0.9538690476190477,
+          "rows": 177,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 168,
+      "cost": "a second ATM, people driven to it",
+      "funders": 1,
+      "key": "t2",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.9298581048581048,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 60,
+        "reaching_grip": 60
+      },
+      "seed": 20261005,
+      "terminals": 2,
+      "units": [
+        {
+          "average_precision": 0.9220085052399325,
+          "base_rate": 0.2748666457483527,
+          "coverage": 0.6311239193083573,
+          "positives": 876,
+          "recall_at_budget": 0.3640552995391705,
+          "roc_auc": 0.9641849015646536,
+          "rows": 3187,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9974626728957496,
+          "base_rate": 0.3630952380952381,
+          "coverage": 1.0,
+          "positives": 61,
+          "recall_at_budget": 0.20754716981132076,
+          "roc_auc": 0.9979035639412998,
+          "rows": 168,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 178,
+      "cost": "a second ATM, people driven to it",
+      "funders": 1,
+      "key": "t2",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.8966727716727718,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 58,
+        "reaching_grip": 60
+      },
+      "seed": 20261006,
+      "terminals": 2,
+      "units": [
+        {
+          "average_precision": 0.8761892858426239,
+          "base_rate": 0.3128778718258767,
+          "coverage": 0.6489028213166145,
+          "positives": 1035,
+          "recall_at_budget": 0.3181377303588749,
+          "roc_auc": 0.9394168960967763,
+          "rows": 3308,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9772537030137172,
+          "base_rate": 0.3595505617977528,
+          "coverage": 0.9666666666666667,
+          "positives": 64,
+          "recall_at_budget": 0.21818181818181817,
+          "roc_auc": 0.9876152832674572,
+          "rows": 178,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 168,
+      "cost": "a second ATM, people driven to it",
+      "funders": 1,
+      "key": "t2",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.8668350168350168,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 58,
+        "reaching_grip": 59
+      },
+      "seed": 20261007,
+      "terminals": 2,
+      "units": [
+        {
+          "average_precision": 0.9197251777163536,
+          "base_rate": 0.2899316345556246,
+          "coverage": 0.6519916142557652,
+          "positives": 933,
+          "recall_at_budget": 0.3441208198489752,
+          "roc_auc": 0.9602282780545995,
+          "rows": 3218,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9432613742123079,
+          "base_rate": 0.375,
+          "coverage": 0.9666666666666667,
+          "positives": 63,
+          "recall_at_budget": 0.20833333333333334,
+          "roc_auc": 0.9846813725490196,
+          "rows": 168,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 166,
+      "cost": "three ATMs across the city",
+      "funders": 1,
+      "key": "t3",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.7976388888888889,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 45,
+        "reaching_grip": 54
+      },
+      "seed": 20261005,
+      "terminals": 3,
+      "units": [
+        {
+          "average_precision": 0.9118675714156312,
+          "base_rate": 0.24787997390737115,
+          "coverage": 0.6119162640901772,
+          "positives": 760,
+          "recall_at_budget": 0.40318302387267907,
+          "roc_auc": 0.9643058930864286,
+          "rows": 3066,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.8874361501462688,
+          "base_rate": 0.25903614457831325,
+          "coverage": 0.75,
+          "positives": 43,
+          "recall_at_budget": 0.2894736842105263,
+          "roc_auc": 0.9281376518218624,
+          "rows": 166,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 175,
+      "cost": "three ATMs across the city",
+      "funders": 1,
+      "key": "t3",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.7750049769071509,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 42,
+        "reaching_grip": 54
+      },
+      "seed": 20261006,
+      "terminals": 3,
+      "units": [
+        {
+          "average_precision": 0.8722600695678566,
+          "base_rate": 0.24933598937583,
+          "coverage": 0.6191261335531739,
+          "positives": 751,
+          "recall_at_budget": 0.40134228187919463,
+          "roc_auc": 0.9472163345839373,
+          "rows": 3012,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9477214069713147,
+          "base_rate": 0.24,
+          "coverage": 0.7,
+          "positives": 42,
+          "recall_at_budget": 0.2647058823529412,
+          "roc_auc": 0.9675972083748754,
+          "rows": 175,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 175,
+      "cost": "three ATMs across the city",
+      "funders": 1,
+      "key": "t3",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.8881449203817625,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 50,
+        "reaching_grip": 59
+      },
+      "seed": 20261007,
+      "terminals": 3,
+      "units": [
+        {
+          "average_precision": 0.9153140287169471,
+          "base_rate": 0.2877853177051203,
+          "coverage": 0.6640569395017794,
+          "positives": 933,
+          "recall_at_budget": 0.3481081081081081,
+          "roc_auc": 0.9553739621974916,
+          "rows": 3242,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9229793441843791,
+          "base_rate": 0.28,
+          "coverage": 0.8333333333333334,
+          "positives": 49,
+          "recall_at_budget": 0.2857142857142857,
+          "roc_auc": 0.9558652729384437,
+          "rows": 175,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 159,
+      "cost": "four ATMs across the city",
+      "funders": 1,
+      "key": "t4",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.7430910609857978,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 43,
+        "reaching_grip": 49
+      },
+      "seed": 20261005,
+      "terminals": 4,
+      "units": [
+        {
+          "average_precision": 0.9110265068167553,
+          "base_rate": 0.2579812963560142,
+          "coverage": 0.6153846153846154,
+          "positives": 800,
+          "recall_at_budget": 0.38742138364779877,
+          "roc_auc": 0.9616043928822096,
+          "rows": 3101,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9708101702219349,
+          "base_rate": 0.2578616352201258,
+          "coverage": 0.7166666666666667,
+          "positives": 41,
+          "recall_at_budget": 0.2857142857142857,
+          "roc_auc": 0.9753424657534246,
+          "rows": 159,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 166,
+      "cost": "four ATMs across the city",
+      "funders": 1,
+      "key": "t4",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.8168017898281056,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 48,
+        "reaching_grip": 52
+      },
+      "seed": 20261006,
+      "terminals": 4,
+      "units": [
+        {
+          "average_precision": 0.9492689194522486,
+          "base_rate": 0.2793278376664553,
+          "coverage": 0.635183850036049,
+          "positives": 881,
+          "recall_at_budget": 0.35853379152348225,
+          "roc_auc": 0.9765121721349539,
+          "rows": 3154,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9867285858139516,
+          "base_rate": 0.2710843373493976,
+          "coverage": 0.8,
+          "positives": 45,
+          "recall_at_budget": 0.2682926829268293,
+          "roc_auc": 0.9921951219512195,
+          "rows": 166,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 156,
+      "cost": "four ATMs across the city",
+      "funders": 1,
+      "key": "t4",
+      "overlap": {
+        "best": 1.0,
+        "mean": 0.77507326007326,
+        "median": 1.0,
+        "networks": 60,
+        "reaching_coverage": 46,
+        "reaching_grip": 48
+      },
+      "seed": 20261007,
+      "terminals": 4,
+      "units": [
+        {
+          "average_precision": 0.9011136621085112,
+          "base_rate": 0.26522154925087665,
+          "coverage": 0.6095238095238096,
+          "positives": 832,
+          "recall_at_budget": 0.3765133171912833,
+          "roc_auc": 0.9521781189540035,
+          "rows": 3137,
+          "unit": "account"
+        },
+        {
+          "average_precision": 0.9942123103227084,
+          "base_rate": 0.28846153846153844,
+          "coverage": 0.7666666666666667,
+          "positives": 45,
+          "recall_at_budget": 0.2564102564102564,
+          "roc_auc": 0.9966555183946488,
+          "rows": 156,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 189,
+      "cost": "both, and this is the W5 rung",
+      "funders": 6,
+      "key": "f6t4",
+      "overlap": {
+        "best": 0.4819277108433735,
+        "mean": 0.0757602650986782,
+        "median": 0.0,
+        "networks": 60,
+        "reaching_coverage": 0,
+        "reaching_grip": 21
+      },
+      "seed": 20261005,
+      "terminals": 4,
+      "units": [
+        {
+          "average_precision": 0.9272646355270899,
+          "base_rate": 0.2793840351979887,
+          "coverage": 0.6216783216783217,
+          "positives": 889,
+          "recall_at_budget": 0.3574660633484163,
+          "roc_auc": 0.9660089245242507,
+          "rows": 3182,
+          "unit": "account"
+        },
+        {
+          "average_precision": null,
+          "base_rate": 0.0,
+          "coverage": 0.0,
+          "positives": 0,
+          "recall_at_budget": null,
+          "roc_auc": null,
+          "rows": 189,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 189,
+      "cost": "both, and this is the W5 rung",
+      "funders": 6,
+      "key": "f6t4",
+      "overlap": {
+        "best": 0.3,
+        "mean": 0.04675985912188709,
+        "median": 0.0,
+        "networks": 60,
+        "reaching_coverage": 0,
+        "reaching_grip": 16
+      },
+      "seed": 20261006,
+      "terminals": 4,
+      "units": [
+        {
+          "average_precision": 0.935907772838149,
+          "base_rate": 0.3008356545961003,
+          "coverage": 0.6484322881921281,
+          "positives": 972,
+          "recall_at_budget": 0.3340270551508845,
+          "roc_auc": 0.9676748458905773,
+          "rows": 3231,
+          "unit": "account"
+        },
+        {
+          "average_precision": null,
+          "base_rate": 0.0,
+          "coverage": 0.0,
+          "positives": 0,
+          "recall_at_budget": null,
+          "roc_auc": null,
+          "rows": 189,
+          "unit": "network"
+        }
+      ]
+    },
+    {
+      "candidates": 190,
+      "cost": "both, and this is the W5 rung",
+      "funders": 6,
+      "key": "f6t4",
+      "overlap": {
+        "best": 0.3333333333333333,
+        "mean": 0.06529204398125285,
+        "median": 0.0,
+        "networks": 60,
+        "reaching_coverage": 0,
+        "reaching_grip": 18
+      },
+      "seed": 20261007,
+      "terminals": 4,
+      "units": [
+        {
+          "average_precision": 0.9600645805921235,
+          "base_rate": 0.34849346219442867,
+          "coverage": 0.6758544652701213,
+          "positives": 1226,
+          "recall_at_budget": 0.2872427983539095,
+          "roc_auc": 0.9757160132842394,
+          "rows": 3518,
+          "unit": "account"
+        },
+        {
+          "average_precision": null,
+          "base_rate": 0.0,
+          "coverage": 0.0,
+          "positives": 0,
+          "recall_at_budget": null,
+          "roc_auc": null,
+          "rows": 190,
+          "unit": "network"
+        }
+      ]
+    }
+  ],
+  "run_id": "6aa6f9d2",
+  "seeds": [
+    20261005,
+    20261006,
+    20261007
+  ]
+}

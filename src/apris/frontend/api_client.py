@@ -128,11 +128,37 @@ def _request(
     raise ApiClientError(f"{method.upper()} {path}: ошибка после {attempts} попыток")
 
 
+
+# --------------------------------------------------------------------------
+# Локальный расчёт, когда сервис не поднят
+# --------------------------------------------------------------------------
+#
+# Правило «интерфейс не считает inference сам» остаётся в силе: приоритет
+# всегда у сервиса, и именно его ответ показывается, когда он есть. Но на
+# публичном развёртывании второго процесса под FastAPI нет, и красная плашка
+# «сервис недоступен» встречала человека на каждой странице со скорингом.
+# Поэтому при отказе соединения вызов уходит в тот же самый движок напрямую,
+# а ответ помечается ``source="local"``, чтобы интерфейс мог это подписать.
+
+
+def _with_local_fallback(remote, local, *args: Any, **kwargs: Any) -> Any:
+    try:
+        return remote(*args, **kwargs)
+    except ApiClientError:
+        from apris.frontend import local_scoring
+
+        return getattr(local_scoring, local)(*args, **kwargs)
+
+
 def health_check() -> dict[str, Any]:
     return _request("GET", "/api/v1/health", timeout=_api_timeout(5.0), retryable=True)
 
 
 def predict_from_features(features: dict[str, float]) -> dict[str, Any]:
+    return _with_local_fallback(_predict_from_features_remote, "predict_from_features", features)
+
+
+def _predict_from_features_remote(features: dict[str, float]) -> dict[str, Any]:
     return _request(
         "POST",
         "/api/v1/predict",
@@ -181,6 +207,10 @@ def health_check_v2_runtime() -> dict[str, Any]:
 
 
 def score_case_v2(payload: dict[str, Any]) -> dict[str, Any]:
+    return _with_local_fallback(_score_case_v2_remote, "score_case", payload)
+
+
+def _score_case_v2_remote(payload: dict[str, Any]) -> dict[str, Any]:
     return _request(
         "POST",
         "/api/v2/score",
@@ -199,6 +229,10 @@ def score_batch_v2(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def explain_case_v2(payload: dict[str, Any]) -> dict[str, Any]:
+    return _with_local_fallback(_explain_case_v2_remote, "explain_case", payload)
+
+
+def _explain_case_v2_remote(payload: dict[str, Any]) -> dict[str, Any]:
     return _request(
         "POST",
         "/api/v2/explain",

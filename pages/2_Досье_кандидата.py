@@ -36,7 +36,7 @@ from apris.frontend.candidate_view import (
 )
 from apris.frontend.session import current_state
 
-st.set_page_config(page_title="Досье кандидата | Cheops AI", page_icon="🗂️", layout="wide")
+st.set_page_config(page_title="Досье кандидата | Vertex", page_icon="🗂️", layout="wide")
 
 FEATURE_LABELS = {
     "graph_density": "плотность графа переводов",
@@ -117,6 +117,13 @@ if api_error is not None:
     st.code("python -m uvicorn apris.api.main:app --port 8000", language="bash")
 else:
     assert score is not None and explanation is not None
+    if score.get("source") == "local":
+        # Сервис не поднят — считает тот же движок в процессе интерфейса.
+        # Подписываем это прямо, чтобы происхождение числа было видно.
+        st.caption(
+            "Локальный расчёт: сервис не запущен, оценку посчитал тот же движок "
+            "в процессе интерфейса. Числа те же, отличается только способ вызова."
+        )
     c1, c2, c3 = st.columns([1, 1, 2])
     c1.metric("Общий риск", f"{float(score['global_risk']):.3f}")
     c2.metric("Полоса", str(score["risk_band"]))

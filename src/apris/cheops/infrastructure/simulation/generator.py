@@ -19,8 +19,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from apris.cheops.domain.models import TransactionEvent
 from apris.cheops.infrastructure.simulation.config import (
@@ -184,6 +186,7 @@ class _Builder:
         when: datetime,
         *,
         asset_type: str = ASSET_FIAT,
+        channel: str = CHANNEL_LEGAL,
     ) -> None:
         if amount <= 0 or sender == receiver:
             return
@@ -201,7 +204,7 @@ class _Builder:
                 receiver_id=receiver,
                 sender_type=sender_acc.account_type if sender_acc else TYPE_PERSON,
                 receiver_type=receiver_acc.account_type if receiver_acc else TYPE_PERSON,
-                channel=CHANNEL_LEGAL,
+                channel=channel,
                 jurisdiction=JURISDICTION,
                 asset_type=asset_type,
             )
@@ -254,8 +257,8 @@ def _spend_down(
     account: str,
     amount: float,
     after: datetime,
-    merchants: list[str],
-    terminals: list[str],
+    merchants: AccountPool,
+    terminals: AccountPool,
     delay_hours: tuple[float, float] = NORMAL_SPEND_DELAY_HOURS,
 ) -> None:
     """Ordinary spending: several payments and occasional cash.
@@ -269,15 +272,23 @@ def _spend_down(
     while remaining > 1000:
         step = min(remaining, b.uniform(EVERYDAY_SPEND_RANGE))
         moment = moment + timedelta(hours=float(b.rng.uniform(*delay_hours)) / 6.0)
-        if b.rng.random() < 0.22 and terminals:
+        if b.rng.random() < 0.22 and len(terminals) > 0:
             b.cash_out(account, str(b.rng.choice(terminals)), step, moment)
         else:
             b.emit(account, str(b.rng.choice(merchants)), step, moment)
         remaining -= step
 
 
+#: Пул счетов, из которого выбирают случайного контрагента. Это либо список,
+#: либо ``np.ndarray``: массивы появились ради скорости — ``rng.choice`` по
+#: списку каждый раз строит массив заново, а генератор дёргает его сотни
+#: тысяч раз. Тип обязан допускать оба, иначе ускорение живёт ценой красного
+#: гейта, и следующий человек чинит его откатом ускорения.
+AccountPool = list[str] | NDArray[Any]
+
+
 def _gen_salary_earners(
-    b: _Builder, merchants: list[str], terminals: list[str], employers: list[str]
+    b: _Builder, merchants: AccountPool, terminals: AccountPool, employers: AccountPool
 ) -> list[str]:
     """Monthly income, gradual spending.
 
@@ -305,7 +316,7 @@ def _gen_salary_earners(
     return ids
 
 
-def _gen_freelancers(b: _Builder, merchants: list[str], terminals: list[str]) -> list[str]:
+def _gen_freelancers(b: _Builder, merchants: AccountPool, terminals: AccountPool) -> list[str]:
     """Irregular income from MANY distinct payers.
 
     Breaks the "many new counterparties" signal: an honest freelancer has
@@ -324,7 +335,7 @@ def _gen_freelancers(b: _Builder, merchants: list[str], terminals: list[str]) ->
     return ids
 
 
-def _gen_traders(b: _Builder, merchants: list[str], terminals: list[str]) -> list[str]:
+def _gen_traders(b: _Builder, merchants: AccountPool, terminals: AccountPool) -> list[str]:
     """Many small sales, periodic LARGE cash withdrawal.
 
     Breaks the "large cash-out" signal: honest revenue is withdrawn too.
@@ -347,7 +358,7 @@ def _gen_traders(b: _Builder, merchants: list[str], terminals: list[str]) -> lis
     return ids
 
 
-def _gen_fast_spenders(b: _Builder, terminals: list[str], employers: list[str]) -> list[str]:
+def _gen_fast_spenders(b: _Builder, terminals: AccountPool, employers: AccountPool) -> list[str]:
     """HARD NEGATIVE 1 — a student who withdraws everything at once.
 
     Money arrives and is fully withdrawn within minutes. At the level of a
@@ -382,7 +393,7 @@ def _gen_fast_spenders(b: _Builder, terminals: list[str], employers: list[str]) 
     return ids
 
 
-def _gen_marketplace_sellers(b: _Builder, terminals: list[str]) -> list[str]:
+def _gen_marketplace_sellers(b: _Builder, terminals: AccountPool) -> list[str]:
     """HARD NEGATIVE 2 — sold something to a stranger and took the cash.
 
     Sold a phone, received a transfer from someone never seen before,
@@ -414,12 +425,12 @@ def _gen_marketplace_sellers(b: _Builder, terminals: list[str]) -> list[str]:
     return ids
 
 
-def _gen_family_circles(b: _Builder, merchants: list[str], terminals: list[str]) -> list[str]:
+def _gen_family_circles(b: _Builder, merchants: AccountPool, terminals: AccountPool) -> list[str]:
     """Transfers inside a small closed group. Breaks dense-community signals."""
     ids: list[str] = []
     for _ in range(b.config.family_circles):
-        group = [b.new_account("ACC") for _ in range(int(b.rng.integers(3, 6)))]
-        ids.extend(group)
+        group = np.array([b.new_account("ACC") for _ in range(int(b.rng.integers(3, 6)))])
+        ids.extend(group.tolist())
         for day in range(0, b.config.days, 3):
             src, dst = b.rng.choice(group, size=2, replace=False)
             amount = b.uniform(FAMILY_TRANSFER_RANGE)
@@ -429,7 +440,7 @@ def _gen_family_circles(b: _Builder, merchants: list[str], terminals: list[str])
     return ids
 
 
-def _gen_crowd_collections(b: _Builder, merchants: list[str], terminals: list[str]) -> None:
+def _gen_crowd_collections(b: _Builder, merchants: AccountPool, terminals: AccountPool) -> None:
     """HARD NEGATIVE 3 — a whip-round for a common cause.
 
     Forty people send money to one person who spends it over weeks. This is
@@ -458,6 +469,28 @@ def _gen_crowd_collections(b: _Builder, merchants: list[str], terminals: list[st
         )
 
 
+
+def _gen_crypto_traders(b: _Builder) -> list[str]:
+    """HARD NEGATIVE 4 — people who honestly buy and sell cryptocurrency.
+    
+    Without them, a model learns "crypto = fraud".
+    """
+    ids: list[str] = []
+    exchange = b.new_account("EXC", account_type=TYPE_COMPANY, opened_days_ago=(100, 1000))
+    b.world.populations[exchange] = "crypto_exchange"
+    for _ in range(b.config.crypto_traders):
+        account = b.new_account("ACC")
+        ids.append(account)
+        # Random honest buying of crypto
+        for _ in range(int(b.rng.integers(1, 6))):
+            when = b.moment(int(b.rng.integers(0, b.config.days)), (8, 23))
+            amount = b.uniform((10_000.0, 500_000.0))
+            # Fiat to exchange
+            b.emit(account, exchange, amount, when)
+            # Exchange gives crypto (same value for simplicity)
+            b.emit(exchange, account, amount, when + timedelta(minutes=int(b.rng.integers(1, 15))), channel="crypto", asset_type="crypto")
+    return ids
+
 # ==========================================================================
 # Fraudulent structures
 # ==========================================================================
@@ -465,9 +498,9 @@ def _gen_crowd_collections(b: _Builder, merchants: list[str], terminals: list[st
 
 def _gen_mule_network(
     b: _Builder,
-    merchants: list[str],
-    terminals: list[str],
-    employers: list[str],
+    merchants: AccountPool,
+    terminals: AccountPool,
+    employers: AccountPool,
     index: int,
 ) -> SimulatedNetwork:
     """A fast mule network: source(s) -> mules -> ATM inside a tight window.
@@ -582,7 +615,7 @@ def _gen_mule_network(
     )
 
 
-def _gen_pyramid(b: _Builder, terminals: list[str], index: int) -> SimulatedNetwork:
+def _gen_pyramid(b: _Builder, terminals: AccountPool, index: int) -> SimulatedNetwork:
     """A slow scheme: payouts funded by inflow.
 
     The same invariant as a mule network — transit without own income —
@@ -660,6 +693,82 @@ def _gen_pyramid(b: _Builder, terminals: list[str], index: int) -> SimulatedNetw
     )
 
 
+
+def _gen_crypto_layering(b: _Builder, index: int) -> SimulatedNetwork:
+    """A scheme combining LEGAL_LAYERING, LEGAL_TO_CRYPTO_BRIDGE and CRYPTO_MIXING.
+    
+    Legal entrance -> 2-4 layers of transfers between front accounts -> bridge to crypto
+    -> splitting between several crypto addresses.
+    """
+    # Legal entrance
+    funder = b.new_account("FND", account_type=TYPE_COMPANY)
+    num_layers = int(b.rng.integers(2, 5))
+    prev_layer = [funder]
+    all_accounts = [funder]
+    
+    start_day = int(b.rng.integers(0, max(1, b.config.days - 10)))
+    current_time = b.moment(start_day, (9, 12))
+    
+    amount = b.uniform((500_000.0, 3_000_000.0))
+    current_amounts = {funder: amount}
+    
+    # Layering
+    for i in range(num_layers):
+        next_layer_size = int(b.rng.integers(2, 5))
+        next_layer = [b.new_account("LYR") for _ in range(next_layer_size)]
+        all_accounts.extend(next_layer)
+        next_amounts = {str(acc): 0.0 for acc in next_layer}
+        
+        current_time += timedelta(hours=float(b.rng.uniform(1, 12)))
+        for src in prev_layer:
+            src_amt = current_amounts[str(src)]
+            if src_amt <= 0: continue
+            
+            # Split to next layer
+            parts = int(b.rng.integers(1, min(4, next_layer_size + 1)))
+            chosen_dsts = b.rng.choice(next_layer, size=parts, replace=False)
+            split_amt = src_amt / parts
+            for dst in chosen_dsts:
+                b.emit(str(src), str(dst), split_amt, current_time + timedelta(minutes=float(b.rng.uniform(1, 30))))
+                next_amounts[str(dst)] += split_amt
+                
+        prev_layer = next_layer
+        current_amounts = next_amounts
+        
+    # Bridge to crypto and splitting
+    exchange = b.new_account("EXC", account_type=TYPE_COMPANY)
+    b.world.populations[exchange] = "crypto_exchange"
+    
+    crypto_targets = [b.new_account("CRY") for _ in range(int(b.rng.integers(4, 10)))]
+    all_accounts.extend(crypto_targets)
+    all_accounts.append(exchange)
+    
+    current_time += timedelta(hours=float(b.rng.uniform(1, 12)))
+    
+    for src in prev_layer:
+        src_amt = current_amounts[str(src)]
+        if src_amt <= 0: continue
+        
+        # Fiat to exchange
+        bridge_time = current_time + timedelta(minutes=float(b.rng.uniform(1, 30)))
+        b.emit(str(src), exchange, src_amt, bridge_time)
+        
+        # Exchange to crypto targets (mixing)
+        parts = int(b.rng.integers(3, len(crypto_targets) + 1))
+        chosen_crypto = b.rng.choice(crypto_targets, size=parts, replace=False)
+        split_amt = src_amt / parts
+        
+        for dst in chosen_crypto:
+            b.emit(exchange, str(dst), split_amt, bridge_time + timedelta(minutes=float(b.rng.uniform(5, 60))), channel="crypto", asset_type="crypto")
+            
+    return SimulatedNetwork(
+        network_id=f"NET{index:04d}",
+        kind="crypto_layering",
+        scale="fast",
+        account_ids=tuple(all_accounts),
+        organizer_ids=(funder,),
+    )
+
 # ==========================================================================
 # Entry point
 # ==========================================================================
@@ -669,17 +778,17 @@ def generate_world(config: SimulationConfig | None = None) -> SimulatedWorld:
     """Build a full synthetic world and return it with its ground truth."""
     b = _Builder(config or SimulationConfig())
 
-    terminals = [b.new_terminal() for _ in range(b.config.terminals)]
-    merchants = [
+    terminals = np.array([b.new_terminal() for _ in range(b.config.terminals)])
+    merchants = np.array([
         b.new_account("MER", account_type=TYPE_MERCHANT) for _ in range(b.config.merchants)
-    ]
+    ])
 
     # ASSUMED: few large employers rather than many small ones. With a
     # hundred tiny companies nobody accumulates a fan-out and the honest
     # counterpart of "handing money to many people" never appears.
-    employers = [
+    employers = np.array([
         b.new_account("EMP", account_type=TYPE_COMPANY) for _ in range(b.config.employers)
-    ]
+    ])
     for employer in employers:
         b.world.populations[employer] = "employer"
 
@@ -688,10 +797,16 @@ def generate_world(config: SimulationConfig | None = None) -> SimulatedWorld:
     b.mark(_gen_traders(b, merchants, terminals), "trader")
     b.mark(_gen_fast_spenders(b, terminals, employers), "fast_spender")
     b.mark(_gen_marketplace_sellers(b, terminals), "marketplace_seller")
+    b.mark(_gen_crypto_traders(b), "crypto_trader")
     b.mark(_gen_family_circles(b, merchants, terminals), "family_circle")
     _gen_crowd_collections(b, merchants, terminals)
 
     index = 1
+    for _ in range(b.config.crypto_layering):
+        network = _gen_crypto_layering(b, index)
+        b.world.networks.append(network)
+        b.mark(list(network.account_ids), "crypto_layering")
+        index += 1
     for _ in range(b.config.mule_networks):
         network = _gen_mule_network(b, merchants, terminals, employers, index)
         b.world.networks.append(network)
