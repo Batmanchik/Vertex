@@ -46,7 +46,7 @@ from apris.population_map import (
 )
 from apris.risk_engine import OPERATIONAL_INPUT_BOUNDS, operational_to_features
 
-st.set_page_config(page_title="Ручная проверка | Cheops AI", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Ручная проверка | Vertex", page_icon="🔍", layout="wide")
 
 FEATURE_LABELS = {
     "growth_rate": "Темп роста вкладчиков",

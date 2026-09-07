@@ -36,7 +36,7 @@ from apris.frontend.candidate_view import (
 )
 from apris.frontend.session import current_state
 
-st.set_page_config(page_title="Досье кандидата | Cheops AI", page_icon="🗂️", layout="wide")
+st.set_page_config(page_title="Досье кандидата | Vertex", page_icon="🗂️", layout="wide")
 
 FEATURE_LABELS = {
     "graph_density": "плотность графа переводов",

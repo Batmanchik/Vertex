@@ -33,7 +33,7 @@ from apris.cheops.infrastructure.ml.case_pipeline import run_case_validation
 from apris.cheops.infrastructure.simulation.acceptance import evaluate as evaluate_acceptance
 from apris.frontend.session import current_state
 
-st.set_page_config(page_title="Валидация | Cheops AI", page_icon="📐", layout="wide")
+st.set_page_config(page_title="Валидация | Vertex", page_icon="📐", layout="wide")
 
 FIGURE_DIR = _PROJECT_ROOT / "artifacts" / "figures"
 

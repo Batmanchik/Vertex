@@ -36,7 +36,7 @@ import streamlit as st
 
 from apris.cheops.infrastructure.pipeline import QUEUE_PATH, read_queue
 
-st.set_page_config(page_title="Очередь аналитика | Cheops AI", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Очередь аналитика | Vertex", page_icon="📋", layout="wide")
 
 st.title("📋 Очередь аналитика")
 st.caption(

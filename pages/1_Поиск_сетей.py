@@ -33,7 +33,7 @@ from apris.frontend.session import (
     world_summary_rows,
 )
 
-st.set_page_config(page_title="Поиск сетей | Cheops AI", page_icon="🕸️", layout="wide")
+st.set_page_config(page_title="Поиск сетей | Vertex", page_icon="🕸️", layout="wide")
 
 st.title("🕸️ Поиск сетей в потоке событий")
 st.caption(
