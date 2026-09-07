@@ -317,9 +317,92 @@ def networks_of_kind(world: SimulatedWorld, kind: str) -> list[SimulatedNetwork]
 
 __all__ = [
     "networks_of_kind",
+    "plot_case_against_all",
     "plot_crypto_chain",
     "plot_honest_lookalike",
     "plot_mule_ring",
     "plot_pyramid",
     "plot_structuring_sketch",
 ]
+
+
+# ==========================================================================
+# 6. Наш кейс среди всех: где выбранный кандидат в общей массе
+# ==========================================================================
+
+
+def plot_case_against_all(
+    scores,
+    labels,
+    highlight_index: int | None = None,
+    highlight_score: float | None = None,
+):
+    """Все кейсы мира на одной оси, и наш — отдельной вертикалью.
+
+    Смысл картинки в масштабе: одна оценка сама по себе ничего не говорит,
+    и только распределение по тысячам кейсов показывает, насколько она
+    высока. Честные и мошеннические разложены отдельно, потому что
+    совмещённая гистограмма прячет ровно то, ради чего её смотрят —
+    перекрытие двух классов в середине шкалы.
+    """
+    import numpy as np
+
+    scores = np.asarray(scores, dtype=float)
+    labels = np.asarray(labels, dtype=int)
+    honest = scores[labels == 0]
+    fraud = scores[labels == 1]
+
+    figure, (top, bottom) = plt.subplots(
+        2, 1, figsize=(11, 6), sharex=True,
+        gridspec_kw={"height_ratios": [3, 2], "hspace": 0.18},
+    )
+
+    bins = 60
+    top.hist(honest, bins=bins, range=(0, 1), color=HONEST, alpha=0.85,
+             label=f"честные кейсы ({len(honest)})")
+    top.hist(fraud, bins=bins, range=(0, 1), color=MULE, alpha=0.85,
+             label=f"мошеннические ({len(fraud)})")
+    top.set_yscale("log")
+    top.set_ylabel("кейсов в корзине (лог)")
+    top.legend(loc="upper center", frameon=False, fontsize=10)
+    top.grid(True, axis="y", color=EDGE, linewidth=0.8)
+    top.set_axisbelow(True)
+    for side in ("top", "right"):
+        top.spines[side].set_visible(False)
+
+    order = np.argsort(-scores)
+    ranks = np.arange(1, len(scores) + 1)
+    bottom.scatter(scores[order], ranks, s=4,
+                   c=[MULE if labels[i] else HONEST for i in order], alpha=0.6)
+    bottom.set_ylabel("место в очереди\n(1 — самый рискованный)")
+    bottom.set_xlabel("оценка риска, посчитанная детектором")
+    bottom.grid(True, axis="both", color=EDGE, linewidth=0.8)
+    bottom.set_axisbelow(True)
+    bottom.invert_yaxis()
+    for side in ("top", "right"):
+        bottom.spines[side].set_visible(False)
+
+    if highlight_score is not None:
+        for ax in (top, bottom):
+            ax.axvline(highlight_score, color=SOURCE, linewidth=2, zorder=5)
+        above = int((scores > highlight_score).sum())
+        top.annotate(
+            f"наш кейс: {highlight_score:.3f}\nвыше него всего {above} из {len(scores)}",
+            xy=(highlight_score, top.get_ylim()[1] * 0.35),
+            xytext=(min(highlight_score + 0.06, 0.72), top.get_ylim()[1] * 0.35),
+            fontsize=11, fontweight="bold", color=SOURCE,
+            arrowprops=dict(arrowstyle="->", color=SOURCE, linewidth=1.6),
+        )
+
+    top.set_title(
+        f"Все {len(scores)} кейсов мира на одной шкале",
+        fontsize=15, fontweight="bold", color=INK, loc="left", pad=14,
+    )
+    figure.text(
+        0.09, -0.01,
+        "Каждая точка — отдельный кейс. Классы разложены отдельно: совмещённая "
+        "гистограмма прячет перекрытие в середине шкалы, ради которого её и смотрят.",
+        fontsize=9, color=MUTED,
+    )
+    figure.tight_layout(rect=(0, 0.04, 1, 1))
+    return figure

@@ -28,19 +28,27 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import streamlit as st
 
 from apris.cheops.infrastructure.pipeline import QUEUE_PATH, read_queue
 from apris.cheops.infrastructure.reporting.topology_figures import (
     networks_of_kind,
+    plot_case_against_all,
     plot_crypto_chain,
     plot_honest_lookalike,
     plot_mule_ring,
     plot_pyramid,
     plot_structuring_sketch,
 )
-from apris.frontend.session import DEFAULT_SCALE, DEFAULT_SEED, SCALES, ensure_state
+from apris.frontend.session import (
+    DEFAULT_SCALE,
+    DEFAULT_SEED,
+    SCALES,
+    build_world,
+    ensure_state,
+)
 
 st.set_page_config(page_title="Витрина | Vertex", page_icon="🔷", layout="wide")
 
@@ -73,6 +81,7 @@ top[4].metric("Кандидатов найдено", dataset.size)
 
 TABS = st.tabs([
     "🕸 Топологии схем",
+    "📊 Все кейсы разом",
     "₿ Крипто-канал",
     "🪜 Пять миров",
     "📉 Редкость",
@@ -80,6 +89,40 @@ TABS = st.tabs([
     "📋 Очередь аналитика",
     "▶️ Запуск прогонов",
 ])
+
+
+
+@st.cache_data(show_spinner=False)
+def _all_case_scores(scale: str, seed_value: int, unit: str):
+    """Оценки всех объектов мира, посчитанные честным walk-forward.
+
+    Два уровня анализа дают разный масштаб: счетов в мире тысячи, а групп —
+    десятки, потому что группа собирается из многих счетов. Показывать надо
+    оба: на счетах видно распределение, на группах — насколько их мало.
+
+    Кэшируется: это самая дорогая операция страницы.
+    """
+    from apris.cheops.infrastructure.experiments.ladder import (
+        build_account_rows,
+        build_network_rows,
+    )
+    from apris.cheops.infrastructure.experiments.ladder_of_worlds import pooled_out_of_fold
+    from apris.cheops.infrastructure.simulation.discovery import (
+        discover_candidates,
+        label_candidates,
+    )
+
+    current_world = build_world(scale, seed_value)
+    if unit == "счета":
+        rows, _ = build_account_rows(current_world)
+    else:
+        candidates = discover_candidates(current_world)
+        labels, _ = label_candidates(current_world, candidates)
+        _, rows = build_network_rows(current_world, candidates, labels)
+    scores, truth = pooled_out_of_fold(rows)
+    if len(scores) < 20:
+        return None, None
+    return scores, truth
 
 
 def _figure(fig) -> None:
@@ -147,10 +190,63 @@ with TABS[0]:
         )
 
 
+
 # ==========================================================================
-# 2. Крипто-канал
+# 2. Все кейсы разом
 # ==========================================================================
 with TABS[1]:
+    st.markdown(
+        "Одна оценка сама по себе не значит ничего: пока не видно распределения, "
+        "непонятно, высока она или нет. Здесь **все кейсы мира сразу** и выбранный "
+        "кандидат отдельной вертикалью."
+    )
+
+    unit = st.radio(
+        "Объект анализа",
+        ["счета", "группы"],
+        horizontal=True,
+        help="Счетов в мире тысячи, групп — десятки: группа собирается из многих счетов.",
+    )
+    with st.spinner("Считаю оценки по всем кейсам — это самая долгая операция страницы…"):
+        scores, truth = _all_case_scores(scale_key, int(seed), unit)
+
+    if scores is None:
+        st.warning("В этом мире слишком мало кейсов для сравнения — увеличьте масштаб.")
+    else:
+        row = st.columns(4)
+        row[0].metric("Кейсов оценено", f"{len(scores):,}".replace(",", " "))
+        row[1].metric("Из них мошеннических", int(truth.sum()))
+        row[2].metric("Медиана оценки", f"{float(np.median(scores)):.3f}")
+        row[3].metric("Верхний процент", f"{float(np.quantile(scores, 0.99)):.3f}")
+
+        index = st.slider(
+            "Какой кейс подсветить (по месту в очереди, 1 — самый рискованный)",
+            1, len(scores), 1,
+        )
+        order = np.argsort(-scores)
+        highlight = float(scores[order[index - 1]])
+        is_fraud = bool(truth[order[index - 1]])
+
+        _figure(plot_case_against_all(scores, truth, highlight_score=highlight))
+
+        above = int((scores > highlight).sum())
+        st.markdown(
+            f"**Кейс №{index} в очереди: оценка {highlight:.3f}.** "
+            f"Выше него — {above} из {len(scores)} кейсов. "
+            f"На самом деле это {'**мошенническая сеть**' if is_fraud else 'честный кейс'} "
+            "(метка известна только для проверки и модели не передавалась)."
+        )
+        st.caption(
+            "Оценки получены purged walk-forward: каждый кейс оценивала модель, "
+            "которая его не видела. Классы разложены отдельными гистограммами — "
+            "совмещённая прячет перекрытие в середине шкалы."
+        )
+
+
+# ==========================================================================
+# 3. Крипто-канал
+# ==========================================================================
+with TABS[2]:
     chains = networks_of_kind(world, "crypto_layering")
     crypto_events = [e for e in world.events if e.channel == "crypto"]
     wallets = {e.receiver_id for e in crypto_events}
@@ -182,7 +278,7 @@ with TABS[1]:
 # ==========================================================================
 # 3. Пять миров
 # ==========================================================================
-with TABS[2]:
+with TABS[3]:
     st.markdown(
         "Сложность объявлена **до** прогонов: ступень меняет, какие честные люди "
         "рядом, а не сколько их. Показываются все ступени, включая ту, где система падает."
@@ -218,7 +314,7 @@ with TABS[2]:
 # ==========================================================================
 # 4. Редкость
 # ==========================================================================
-with TABS[3]:
+with TABS[4]:
     st.markdown(
         "Главный вопрос банка. Метрика ранжирования редкости почти не замечает, "
         "а работа аналитика растёт в десятки раз."
@@ -258,7 +354,7 @@ with TABS[3]:
 # ==========================================================================
 # 5. Уклонение
 # ==========================================================================
-with TABS[4]:
+with TABS[5]:
     st.markdown(
         "Организатор платит за сокрытие: каждый независимый источник — это счёт с "
         "реальными деньгами, каждый банкомат — люди, которых надо возить по городу."
@@ -303,7 +399,7 @@ with TABS[4]:
 # ==========================================================================
 # 6. Очередь аналитика
 # ==========================================================================
-with TABS[5]:
+with TABS[6]:
     queue = read_queue()
     if queue is None:
         st.warning(
@@ -333,7 +429,7 @@ with TABS[5]:
 # ==========================================================================
 # 7. Запуск прогонов
 # ==========================================================================
-with TABS[6]:
+with TABS[7]:
     st.markdown(
         "Кнопки запускают **настоящие** прогоны на этой машине и переписывают "
         "артефакты, из которых сделаны все графики выше."
