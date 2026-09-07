@@ -87,6 +87,14 @@ def predict_from_features(features: dict[str, float]) -> dict[str, Any]:
     }
 
 
+def explain_features(features: dict[str, float], top_k: int = 5) -> list[dict[str, Any]]:
+    """Вклад признаков — та же функция, что вызывает API у себя внутри."""
+    from apris.risk_engine import explain, load_artifacts
+
+    model, feature_names = load_artifacts()
+    return explain(features, top_k=top_k, model=model, feature_names=feature_names)
+
+
 def health() -> dict[str, Any]:
     _, _, engine = _ensure_engine()
     payload = dict(engine.health())
@@ -94,4 +102,10 @@ def health() -> dict[str, Any]:
     return payload
 
 
-__all__ = ["explain_case", "health", "predict_from_features", "score_case"]
+__all__ = [
+    "explain_case",
+    "explain_features",
+    "health",
+    "predict_from_features",
+    "score_case",
+]

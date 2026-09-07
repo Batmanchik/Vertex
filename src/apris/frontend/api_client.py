@@ -177,6 +177,15 @@ def predict_from_ops(operational: dict[str, float]) -> dict[str, Any]:
 
 
 def explain_features(features: dict[str, float], top_k: int = 5) -> list[dict[str, Any]]:
+    try:
+        return _explain_features_remote(features, top_k)
+    except ApiClientError:
+        from apris.frontend import local_scoring
+
+        return local_scoring.explain_features(features, top_k)
+
+
+def _explain_features_remote(features: dict[str, float], top_k: int = 5) -> list[dict[str, Any]]:
     payload = _request(
         "POST",
         "/api/v1/explain",
