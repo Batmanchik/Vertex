@@ -27,6 +27,13 @@ FORBIDDEN_IMPORTS = (
     "apris.crypto_ponzi.visualizations",
 )
 
+# The showcase page is allowed to draw the company-level demo, because that
+# scenario is generated rather than detected and the picture is built from
+# its transactions, not from a verdict. The permission is conditional: the
+# page must say so on screen, and this marker is what says it.
+DEMO_MARKER = "синтетический демонстрационный сценарий"
+DEMO_ALLOWED = {"6_Витрина_Vertex.py"}
+
 
 def test_there_are_pages_to_check() -> None:
     assert PAGES, "no pages found — the glob or the layout changed"
@@ -78,7 +85,29 @@ def test_no_page_draws_a_graph_built_from_the_verdict() -> None:
     for path in PAGES:
         modules = _imported_modules(path)
         for module in FORBIDDEN_IMPORTS:
+            if module.startswith("apris.crypto_ponzi") and path.name in DEMO_ALLOWED:
+                continue
             assert module not in modules, f"{path} imports {module}"
+
+
+def test_a_page_showing_the_generated_company_says_it_is_a_demo() -> None:
+    """Разрешение показывать сгенерированную компанию — условное.
+
+    Картинка строится из транзакций, а не из вердикта, поэтому исходный
+    запрет она не нарушает. Но кейс всё равно придуман, и на защите разница
+    между «мы это нашли» и «мы это нарисовали» решает всё. Поэтому страница,
+    которая его показывает, обязана сказать это на экране, и проверяется
+    именно текст, а не намерение.
+    """
+    for path in PAGES:
+        modules = _imported_modules(path)
+        if not any(m.startswith("apris.crypto_ponzi") for m in modules):
+            continue
+        text = path.read_text(encoding="utf-8")
+        assert DEMO_MARKER in text, (
+            f"{path} показывает сгенерированную компанию, но нигде не говорит, "
+            f"что это {DEMO_MARKER}"
+        )
 
 
 def test_scoring_pages_go_through_the_api_client() -> None:

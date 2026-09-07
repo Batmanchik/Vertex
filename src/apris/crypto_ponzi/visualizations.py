@@ -153,7 +153,8 @@ def plot_counterparty_network(
         ax.axis("off")
         return fig
 
-    pos = nx.spring_layout(G, seed=42, k=2.5)
+    others = [n for n in G.nodes if n != company_name]
+    pos = nx.shell_layout(G, nlist=[[company_name], others]) if others else {company_name: (0, 0)}
 
     # Node colors by type
     node_colors = []
@@ -182,23 +183,43 @@ def plot_counterparty_network(
         for u, v, _ in edges
     ]
 
-    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=node_sizes, ax=ax, alpha=0.9)
     nx.draw_networkx_edges(
         G, pos, width=edge_widths, edge_color=edge_colors,
-        alpha=0.5, arrows=True, arrowsize=12, ax=ax,
-        connectionstyle="arc3,rad=0.08",
+        alpha=0.55, arrows=True, arrowsize=13, ax=ax,
+        connectionstyle="arc3,rad=0.12", node_size=node_sizes,
+    )
+    nx.draw_networkx_nodes(
+        G, pos, node_color=node_colors, node_size=node_sizes, ax=ax,
+        alpha=0.95, edgecolors="white", linewidths=1.5,
     )
 
     # Labels
-    labels = {}
-    for node in G.nodes:
+    for node, (x, y) in pos.items():
         name = str(node)
-        if len(name) > 18:
-            name = name[:16] + "…"
-        labels[node] = name
-    nx.draw_networkx_labels(G, pos, labels, font_size=7, font_color="#1a1a1a", ax=ax)
+        if len(name) > 20:
+            name = name[:18] + "…"
+        if node == company_name:
+            ax.text(x, y - 0.16, name, fontsize=9, fontweight="bold",
+                    ha="center", va="top", color="#1a1a1a")
+            continue
+        distance = (x ** 2 + y ** 2) ** 0.5 or 1.0
+        ax.text(x * 1.18, y * 1.18, name, fontsize=8, color="#1a1a1a",
+                ha="left" if x > 0 else "right",
+                va="center" if abs(y) < 0.9 * distance else "bottom")
+
+    legend = [
+        plt.Line2D([], [], marker="o", linestyle="", markersize=11, color=_GREEN, label="компания"),
+        plt.Line2D([], [], marker="o", linestyle="", markersize=9, color=_PURPLE, label="криптобиржи"),
+        plt.Line2D([], [], marker="o", linestyle="", markersize=9, color=_ORANGE, label="физические лица"),
+        plt.Line2D([], [], marker="o", linestyle="", markersize=9, color=_BLUE, label="юридические лица"),
+        plt.Line2D([], [], linestyle="-", linewidth=2.5, color=_GREEN, label="приток"),
+        plt.Line2D([], [], linestyle="-", linewidth=2.5, color=_RED, label="отток"),
+    ]
+    ax.legend(handles=legend, loc="upper left", frameon=False, fontsize=8, ncol=2)
 
     ax.set_title("Сетевой граф компании и топ-контрагентов", fontsize=13, fontweight="bold", pad=12)
+    ax.set_xlim(-1.55, 1.55)
+    ax.set_ylim(-1.45, 1.45)
     ax.axis("off")
     fig.tight_layout()
     return fig
