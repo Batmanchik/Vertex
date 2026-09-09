@@ -7,6 +7,9 @@
     what the demo needs, starts the API and opens the measurements page.
     Safe to run again: an existing checkout is reused and updated.
 
+    git is optional. When it is missing the branch is fetched as a zip from
+    GitHub instead, which needs nothing beyond PowerShell itself.
+
     Run it straight from GitHub, no download step and no execution policy to change:
 
         irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1 | iex
@@ -97,6 +100,80 @@ function Update-PathFromRegistry {
     } catch {
         # Not fatal: the search below also looks at fixed locations.
     }
+}
+
+function Get-GitCommand {
+    # Git for Windows can be installed with PATH integration switched off, which
+    # leaves a perfectly good git.exe that no command finds. Same treatment as
+    # Python: reload PATH, then look where the installer actually puts things.
+    Update-PathFromRegistry
+
+    $onPath = Get-Command git -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+
+    $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA, "C:\Program Files") |
+             Where-Object { $_ }
+    foreach ($root in $roots) {
+        foreach ($tail in @("Git\cmd\git.exe", "Programs\Git\cmd\git.exe")) {
+            $path = Join-Path $root $tail
+            if (Test-Path $path) { return $path }
+        }
+    }
+    return $null
+}
+
+function Get-ProjectZip {
+    <#
+        Fetch the branch as a zip and unpack it into $Target.
+
+        GitHub names the top folder after the repo and the branch, with slashes
+        turned into dashes, so the archive is unpacked to a temporary place and
+        the single directory inside it is moved into position.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Target,
+        [Parameter(Mandatory = $true)][string]$BranchName
+    )
+
+    $url = "https://github.com/Batmanchik/Vertex/archive/refs/heads/$BranchName.zip"
+    $temp = Join-Path $env:TEMP ("vertex-" + [Guid]::NewGuid().ToString("N"))
+    $zip = "$temp.zip"
+
+    Write-Host "скачиваю архив ветки $BranchName"
+    try {
+        # Progress rendering makes Invoke-WebRequest crawl on large files.
+        $previous = $ProgressPreference
+        $ProgressPreference = "SilentlyContinue"
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+        $ProgressPreference = $previous
+    } catch {
+        Write-Fail "не удалось скачать архив: $($_.Exception.Message)"
+        return $false
+    }
+
+    try {
+        Expand-Archive -Path $zip -DestinationPath $temp -Force
+    } catch {
+        Write-Fail "архив скачался, но не распаковался: $($_.Exception.Message)"
+        return $false
+    }
+
+    $inner = Get-ChildItem -Path $temp -Directory | Select-Object -First 1
+    if (-not $inner) {
+        Write-Fail "в архиве нет папки проекта."
+        return $false
+    }
+
+    if (Test-Path $Target) {
+        # Обновление поверх: файлы проекта перезаписываются, .venv и artifacts,
+        # которых нет в архиве, остаются на месте.
+        Copy-Item -Path (Join-Path $inner.FullName "*") -Destination $Target -Recurse -Force
+    } else {
+        Move-Item -Path $inner.FullName -Destination $Target
+    }
+
+    Remove-Item $zip, $temp -Recurse -Force -ErrorAction SilentlyContinue
+    return $true
 }
 
 function Get-PythonCandidates {
@@ -202,30 +279,14 @@ function Get-PythonCommand {
 # ---------------------------------------------------------------- checks
 Write-Step "Проверяю, что установлено"
 
-$git = Get-Command git -ErrorAction SilentlyContinue
-if (-not $git) {
-    Write-Host "git не найден." -ForegroundColor Yellow
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        Write-Host "Могу поставить его сам через winget."
-        $answer = Read-Host "Ставить? [Y/n]"
-        if ($answer -eq "" -or $answer -match "^[YyДд]") {
-            Write-Step "Ставлю git"
-            & winget install --id Git.Git -e --source winget `
-                --accept-package-agreements --accept-source-agreements
-            Write-Host ""
-            Write-Host "git установлен. Он появится в PATH только в новом окне." -ForegroundColor Yellow
-            Write-Host "Закройте это окно, откройте новое и запустите команду ещё раз."
-            return
-        }
-    }
-    Write-Fail "не найден git."
-    Write-Host "Поставьте его одной командой:"
-    Write-Host "    winget install --id Git.Git -e --source winget" -ForegroundColor White
-    Write-Host "или скачайте с https://git-scm.com/download/win, галочки по умолчанию."
-    Write-Host "Потом закройте это окно, откройте новое и запустите команду ещё раз."
-    return
+$git = Get-GitCommand
+if ($git) {
+    Write-Host "git: $((& $git --version) -join '')"
+} else {
+    # Not fatal. GitHub serves the branch as a zip, and Expand-Archive is built
+    # into PowerShell, so the project can be fetched without git at all.
+    Write-Host "git не найден, возьму архивом с GitHub." -ForegroundColor Yellow
 }
-Write-Host "git: $((& git --version) -join '')"
 
 $python = Get-PythonCommand
 if (-not $python) {
@@ -239,9 +300,19 @@ if (-not $python) {
             Write-Step "Ставлю Python 3.12"
             & winget install --id Python.Python.3.12 -e --source winget `
                 --accept-package-agreements --accept-source-agreements
-            # winget adds Python to PATH for new processes only, so the search
-            # below relies on the install directories rather than on PATH.
-            $python = Get-PythonCommand
+            if ($LASTEXITCODE -ne 0) {
+                # A broken winget source (0x8a15000f and friends) is common and
+                # has nothing to do with this project. Say so instead of
+                # reporting a success that did not happen.
+                Write-Host ""
+                Write-Host "winget не справился, код $LASTEXITCODE." -ForegroundColor Yellow
+                Write-Host "Иногда чинится командой:  winget source reset --force"
+                Write-Host "Ниже способы поставить Python без winget."
+            } else {
+                # winget puts Python on PATH for new processes only, so the
+                # search relies on the install directories, not on PATH.
+                $python = Get-PythonCommand
+            }
         }
     }
 }
@@ -278,30 +349,42 @@ Write-Host "python: $($python.Version)"
 Write-Step "Проект"
 
 $pyprojectHere = Join-Path (Get-Location).Path "pyproject.toml"
-if ((Test-Path $pyprojectHere) -and ((Get-Content $pyprojectHere -Raw) -match 'name\s*=\s*"apris"')) {
+$alreadyHere = (Test-Path $pyprojectHere) -and
+               ((Get-Content $pyprojectHere -Raw) -match 'name\s*=\s*"apris"')
+
+if ($alreadyHere) {
     # Уже стоим внутри проекта: ничего не скачиваем.
     $Path = (Get-Location).Path
     Write-Host "уже в папке проекта: $Path"
-} elseif (Test-Path (Join-Path $Path ".git")) {
-    Write-Host "проект уже есть: $Path"
-} else {
+} elseif ($git -and -not (Test-Path (Join-Path $Path "pyproject.toml"))) {
     Write-Host "скачиваю в $Path"
-    & git clone $RepoUrl $Path
+    & $git clone $RepoUrl $Path
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "не удалось скачать проект. Проверьте интернет и попробуйте ещё раз."
         return
     }
+} elseif (Test-Path (Join-Path $Path ".git")) {
+    Write-Host "проект уже есть: $Path"
+} else {
+    # Папка есть, но без истории git: её положил сюда прошлый запуск архивом,
+    # и обновлять её надо тем же способом, а не клоном поверх непустой папки.
+    if (-not (Get-ProjectZip -Target $Path -BranchName $Branch)) { return }
+    Write-Host "проект в $Path"
 }
 
 Set-Location $Path
 
-& git fetch origin $Branch 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) {
-    & git checkout $Branch 2>$null | Out-Null
-    & git pull origin $Branch 2>$null | Out-Null
-    Write-Host "ветка: $Branch"
-} else {
-    Write-Host "ветки $Branch нет на сервере, остаюсь на текущей" -ForegroundColor Yellow
+if ($git -and (Test-Path (Join-Path $Path ".git"))) {
+    & $git fetch origin $Branch 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        & $git checkout $Branch 2>$null | Out-Null
+        & $git pull origin $Branch 2>$null | Out-Null
+        Write-Host "ветка: $Branch"
+    } else {
+        Write-Host "ветки $Branch нет на сервере, остаюсь на текущей" -ForegroundColor Yellow
+    }
+} elseif (-not $alreadyHere) {
+    Write-Host "ветка: $Branch (архивом, без истории)"
 }
 
 # ---------------------------------------------------------------- venv
