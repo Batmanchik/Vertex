@@ -82,21 +82,65 @@ function Test-HttpOk {
 }
 
 # ---------------------------------------------------------------- python
-function Get-PythonCommand {
-    # The Windows Store stub called python.exe exits without printing a version,
-    # so a candidate counts only when it actually answers --version.
+function Update-PathFromRegistry {
+    # A console keeps the PATH it was born with, so a Python installed a minute
+    # ago is invisible until a new window is opened. The authoritative value
+    # lives in the registry, and reading it back removes that whole class of
+    # "но я же только что поставил".
+    try {
+        $machine = [Environment]::GetEnvironmentVariable("Path", "Machine")
+        $user = [Environment]::GetEnvironmentVariable("Path", "User")
+        $merged = @($machine, $user) | Where-Object { $_ }
+        if ($merged) {
+            $env:PATH = ($merged -join ";")
+        }
+    } catch {
+        # Not fatal: the search below also looks at fixed locations.
+    }
+}
+
+function Get-PythonCandidates {
     $candidates = @(
-        @{ File = "py";      Args = @("-3.13") },
-        @{ File = "py";      Args = @("-3.12") },
-        @{ File = "py";      Args = @("-3.11") },
-        @{ File = "py";      Args = @("-3") },
-        @{ File = "python";  Args = @() },
-        @{ File = "python3"; Args = @() }
+        @{ File = "py";          Args = @("-3.13") },
+        @{ File = "py";          Args = @("-3.12") },
+        @{ File = "py";          Args = @("-3.11") },
+        @{ File = "py";          Args = @("-3") },
+        @{ File = "python";      Args = @() },
+        @{ File = "python3";     Args = @() },
+        @{ File = "python3.13";  Args = @() },
+        @{ File = "python3.12";  Args = @() },
+        @{ File = "python3.11";  Args = @() }
     )
 
+    # Store Python lands in WindowsApps as python3.12.exe and friends. The bare
+    # python.exe next to them can be the stub that opens the Store instead of
+    # running anything, so the versioned names are tried first.
+    $windowsApps = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+    if (Test-Path $windowsApps) {
+        $apps = Get-ChildItem -Path $windowsApps -Filter "python3*.exe" -File -ErrorAction SilentlyContinue |
+                Sort-Object Name -Descending
+        foreach ($app in $apps) {
+            $candidates += @{ File = $app.FullName; Args = @() }
+        }
+    }
+
+    # The real Store package, in case the alias is switched off in Settings.
+    $storeRoot = if ($env:ProgramW6432) {
+        Join-Path $env:ProgramW6432 "WindowsApps"
+    } else {
+        "C:\Program Files\WindowsApps"
+    }
+    if (Test-Path $storeRoot) {
+        $packages = Get-ChildItem -Path $storeRoot -Filter "PythonSoftwareFoundation.Python.3*" `
+                        -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending
+        foreach ($package in $packages) {
+            $exe = Join-Path $package.FullName "python.exe"
+            if (Test-Path $exe) { $candidates += @{ File = $exe; Args = @() } }
+        }
+    }
+
     # An installer run without "Add to PATH" leaves a working interpreter that
-    # none of the names above reach, so the usual install directories are
-    # searched as well. Newest version first.
+    # none of the names above reach. Newest version first.
     $roots = @(
         (Join-Path $env:LOCALAPPDATA "Programs\Python"),
         "$env:ProgramFiles",
@@ -108,16 +152,25 @@ function Get-PythonCommand {
                  Sort-Object Name -Descending
         foreach ($dir in $found) {
             $exe = Join-Path $dir.FullName "python.exe"
-            if (Test-Path $exe) {
-                $candidates += @{ File = $exe; Args = @() }
-            }
+            if (Test-Path $exe) { $candidates += @{ File = $exe; Args = @() } }
         }
     }
 
-    foreach ($candidate in $candidates) {
+    return $candidates
+}
+
+function Get-PythonCommand {
+    param([switch]$Explain)
+
+    Update-PathFromRegistry
+    $tried = @()
+
+    foreach ($candidate in Get-PythonCandidates) {
+        $shown = (@($candidate.File) + $candidate.Args) -join " "
         try {
             $output = & $candidate.File @($candidate.Args + @("--version")) 2>&1
         } catch {
+            $tried += "$shown -> нет такой команды"
             continue
         }
 
@@ -130,7 +183,18 @@ function Get-PythonCommand {
             if ($major -eq 3 -and $minor -ge 10) {
                 return @{ File = $candidate.File; Args = $candidate.Args; Version = $text }
             }
+            $tried += "$shown -> $text, слишком старый"
+        } else {
+            $short = ($text -split "`n")[0]
+            if (-not $short) { $short = "молчит, похоже на заглушку Microsoft Store" }
+            $tried += "$shown -> $short"
         }
+    }
+
+    if ($Explain) {
+        Write-Host ""
+        Write-Host "Что я пробовал:" -ForegroundColor Yellow
+        foreach ($line in $tried) { Write-Host "  $line" }
     }
     return $null
 }
@@ -183,7 +247,17 @@ if (-not $python) {
 }
 
 if (-not $python) {
+    # Second pass, this time printing every candidate and what it answered.
+    $python = Get-PythonCommand -Explain
+}
+
+if (-not $python) {
     Write-Fail "не найден Python 3.10 или новее."
+    Write-Host ""
+    Write-Host "Если Python из Microsoft Store уже стоит, проверьте псевдонимы:"
+    Write-Host "  Параметры -> Приложения -> Дополнительные параметры приложений ->"
+    Write-Host "  Псевдонимы выполнения приложения. Переключатели python.exe и"
+    Write-Host "  python3.exe должны быть включены." -ForegroundColor White
     Write-Host ""
     Write-Host "Способ 1, через браузер:"
     Write-Host "  открыть https://www.python.org/downloads/ , нажать большую кнопку"
