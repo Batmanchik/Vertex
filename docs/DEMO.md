@@ -140,6 +140,17 @@ irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-rev
 Менять политику запуска скриптов не нужно: команда ничего не сохраняет на диск
 как `.ps1`, поэтому запрет Windows на неподписанные файлы её не касается.
 
+**Если открылась командная строка, а не PowerShell.** Приглашение вида
+`C:\Users\alibe>` это `cmd`, и `irm` там нет: ответом будет «не является
+внутренней или внешней командой». В `cmd` та же установка запускается так:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1 | iex"
+```
+
+Отличить оболочки можно по началу строки: `C:\...>` это `cmd`, `PS C:\...>` это
+PowerShell. Перейти из первой во вторую: набрать `powershell` и нажать Enter.
+
 Если чего-то не хватает, скрипт скажет об этом по-русски и даст ссылку. Два
 случая, которые он не может решить сам:
 
