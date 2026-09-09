@@ -118,6 +118,87 @@ def rarity_chart(rows, key, *, lo, hi, width=270, height=110, pad_left=44, pad_t
     }
 
 
+def unit_square(series, *, width=250, height=250, pad_left=40, pad_top=10, ticks=5):
+    """Кривая внутри квадрата [0,1]×[0,1]: ROC, precision-recall, калибровка.
+
+    Все три читаются одинаково, поэтому и рисуются одним куском кода: разница
+    только в подписях осей и в том, где проходит опорная линия.
+    """
+    y = Axis(0.0, 1.0, pad_top, height, flip=True)
+    x = Axis(0.0, 1.0, pad_left, width)
+    grid = [i / (ticks - 1) for i in range(ticks)]
+    return {
+        "lines": [
+            {
+                "name": s["name"],
+                "colour": s["colour"],
+                "dash": s.get("dash", ""),
+                "series": _series([(p["x"], p["y"]) for p in s["points"]], x, y),
+            }
+            for s in series
+            if s["points"]
+        ],
+        "diagonal": {
+            "x1": round(x(0.0), 1), "y1": round(y(0.0), 1),
+            "x2": round(x(1.0), 1), "y2": round(y(1.0), 1),
+        },
+        "ticks_y": [(f"{g:.2f}".rstrip("0").rstrip(".") or "0", round(y(g), 1)) for g in grid],
+        "ticks_x": [(f"{g:.2f}".rstrip("0").rstrip(".") or "0", round(x(g), 1)) for g in grid],
+        "width": width,
+        "height": height,
+        "pad_left": pad_left,
+        "canvas": width + 14,
+    }
+
+
+def score_histogram(bins, *, width=506, height=140, pad_left=46, pad_top=12, log=True):
+    """Сколько честных и сколько мошеннических объектов попало в каждую оценку.
+
+    Шкала логарифмическая: честных в сорок раз больше, и на линейной оси
+    мошеннический столбик просто не виден.
+    """
+    import math
+
+    peak = max([b["honest"] for b in bins] + [b["fraud"] for b in bins] + [1])
+    top = math.log10(peak + 1) if log else peak
+
+    def bar(value: float) -> float:
+        v = math.log10(value + 1) if log else value
+        return (v / top) * (height - pad_top) if top else 0.0
+
+    step = (width - pad_left) / max(len(bins), 1)
+    out = []
+    for i, b in enumerate(bins):
+        left = pad_left + i * step
+        out.append({
+            "x": round(left, 1),
+            "w": round(step, 1),
+            "honest_h": round(bar(b["honest"]), 1),
+            "honest_y": round(height - bar(b["honest"]), 1),
+            "fraud_h": round(bar(b["fraud"]), 1),
+            "fraud_y": round(height - bar(b["fraud"]), 1),
+            "low": b["low"],
+            "honest": b["honest"],
+            "fraud": b["fraud"],
+        })
+
+    marks = [1, 10, 100, 1000, 10000]
+    return {
+        "bars": out,
+        "ticks_y": [
+            (str(m), round(height - bar(m), 1)) for m in marks if bar(m) <= height - pad_top
+        ],
+        "ticks_x": [
+            (f"{b['low']:.1f}", round(pad_left + i * step, 1))
+            for i, b in enumerate(bins) if i % 4 == 0
+        ],
+        "width": width,
+        "height": height,
+        "pad_left": pad_left,
+        "canvas": width + 20,
+    }
+
+
 def matrix_grid(matrix, *, cell_w=118, cell_h=40, label_w=176, head_h=30):
     """Сетка «модель × уровень» с заливкой по ROC-AUC."""
     lo, hi = 0.70, 1.0

@@ -487,6 +487,90 @@ def operating_points() -> tuple[list[Point], RunMeta]:
     )
 
 
+# ──────────────────────────────────────────────────────────────────────
+# Кривые детектора: ROC, precision-recall, калибровка, бюджет проверок
+# ──────────────────────────────────────────────────────────────────────
+@dataclass
+class Curve:
+    """Один разрез: модель на одном уровне анализа, со всеми её кривыми."""
+
+    scope: str
+    model: str
+    rows: int
+    positives: int
+    base_rate: float
+    folds: int
+    roc_auc: float
+    average_precision: float
+    brier: float
+    roc: list[dict[str, float]]
+    pr: list[dict[str, float]]
+    calibration: list[dict[str, Any]]
+    histogram: list[dict[str, Any]]
+    budget: list[dict[str, Any]]
+
+    @property
+    def key(self) -> str:
+        return f"{self.scope}:{self.model}"
+
+    @property
+    def scope_ru(self) -> str:
+        return SCOPE_NAMES_RU.get(self.scope, self.scope)
+
+    @property
+    def model_ru(self) -> str:
+        return MODEL_NAMES_RU.get(self.model, self.model)
+
+
+@dataclass
+class CurveSet:
+    items: list[Curve] = field(default_factory=list)
+    world: dict[str, Any] = field(default_factory=dict)
+    seed: int = 0
+    present: bool = False
+
+    def at(self, scope: str, model: str) -> Curve | None:
+        for c in self.items:
+            if c.scope == scope and c.model == model:
+                return c
+        return None
+
+
+def curves() -> tuple[CurveSet, RunMeta]:
+    raw = _load("detector_curves.json")
+    meta = _meta(raw, "artifacts/detector_curves.json")
+    if not raw:
+        return CurveSet(), meta
+    items = [
+        Curve(
+            scope=b["scope"],
+            model=b["model"],
+            rows=int(b["rows"]),
+            positives=int(b["positives"]),
+            base_rate=float(b["base_rate"]),
+            folds=int(b["folds"]),
+            roc_auc=float(b["roc_auc"]),
+            average_precision=float(b["average_precision"]),
+            brier=float(b["brier"]),
+            roc=b["roc"],
+            pr=b["pr"],
+            calibration=b["calibration"],
+            histogram=b["histogram"],
+            budget=b["budget"],
+        )
+        for b in raw.get("blocks", [])
+    ]
+    return (
+        CurveSet(
+            items=items,
+            world=raw.get("world", {}),
+            seed=int(raw.get("seed", 0)),
+            present=bool(items),
+        ),
+        meta,
+    )
+
+
 def snapshot() -> dict[str, Any]:
     """Всё сразу — то, что рендерит витрина."""
     world_rows, world_meta = worlds()
@@ -498,7 +582,9 @@ def snapshot() -> dict[str, Any]:
     mm, mm_meta = model_matrix()
     bl, bl_meta = blocks()
     op, op_meta = operating_points()
+    cv, cv_meta = curves()
     return {
+        "curves": cv, "curves_meta": cv_meta,
         "matrix": mm, "matrix_meta": mm_meta,
         "blocks": bl, "blocks_meta": bl_meta,
         "points": op, "points_meta": op_meta,

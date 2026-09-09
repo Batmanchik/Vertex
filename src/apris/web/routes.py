@@ -39,6 +39,32 @@ def results_page(request: Request) -> HTMLResponse:
     if rarity:
         context["rc1"] = charts.rarity_chart(rarity, "roc_auc", lo=0.85, hi=1.0)
         context["rc2"] = charts.rarity_chart(rarity, "precision_at_budget", lo=0.0, hi=0.6)
+
+    cv = snap["curves"]
+    if cv.present:
+        # Один цвет на модель во всех трёх квадратах: глаз тогда сравнивает
+        # кривые между графиками, а не разгадывает легенду заново.
+        palette = {"forest": "#1B5B66", "logistic": "#B4741C", "rules": "#A8261F"}
+        account = [c for c in cv.items if c.scope == "account"]
+        context["roc_chart"] = charts.unit_square([
+            {"name": c.model_ru, "colour": palette.get(c.model, "#4C596A"), "points": c.roc}
+            for c in account
+        ])
+        context["pr_chart"] = charts.unit_square([
+            {"name": c.model_ru, "colour": palette.get(c.model, "#4C596A"), "points": c.pr}
+            for c in account
+        ])
+        best = cv.at("account", "forest")
+        if best:
+            context["cal_chart"] = charts.unit_square([{
+                "name": "лес",
+                "colour": palette["forest"],
+                "points": [
+                    {"x": b["mean_score"], "y": b["fraud_share"]}
+                    for b in best.calibration if b["count"]
+                ],
+            }])
+            context["hist_chart"] = charts.score_histogram(best.histogram)
     return templates.TemplateResponse(request, "results.html", context)
 
 

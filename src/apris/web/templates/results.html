@@ -34,11 +34,12 @@
       <li><a href="#r4"><span class="k">Р4</span><span>Параметр W</span></a></li>
       <li><a href="#r5"><span class="k">Р5</span><span>Сравнение моделей</span></a></li>
       <li><a href="#r6"><span class="k">Р6</span><span>Алгоритмы обучения</span></a></li>
-      <li><a href="#r7"><span class="k">Р7</span><span>Формулы</span></a></li>
-      <li><a href="#r8"><span class="k">Р8</span><span>Признаки модели</span></a></li>
-      <li><a href="#r9"><span class="k">Р9</span><span>Дела в очереди</span></a></li>
-      <li><a href="#r10"><span class="k">Р10</span><span>Типологии схем</span></a></li>
-      <li><a href="#r11"><span class="k">Р11</span><span>Состав мира</span></a></li>
+      <li><a href="#r7"><span class="k">Р7</span><span>Кривые детектора</span></a></li>
+      <li><a href="#r8"><span class="k">Р8</span><span>Формулы</span></a></li>
+      <li><a href="#r9"><span class="k">Р9</span><span>Признаки модели</span></a></li>
+      <li><a href="#r10"><span class="k">Р10</span><span>Дела в очереди</span></a></li>
+      <li><a href="#r11"><span class="k">Р11</span><span>Типологии схем</span></a></li>
+      <li><a href="#r12"><span class="k">Р12</span><span>Состав мира</span></a></li>
     </ol>
     <div class="facts">
       <div class="lbl">Опорные числа</div>
@@ -581,9 +582,235 @@
         но обученной модели в репозитории нет и метрик для него мы не приводим.</p>
     </section>
 
-    {# ══════════════ Формулы ══════════════ #}
+    {# ══════════════ Р7 ══════════════ #}
+    {% if curves.present %}
     <section class="res" id="r7">
-      <header><span class="rid">Р7</span><h2>Формулы, по которым всё считается</h2></header>
+      <header><span class="rid">Р7</span><h2>Кривые детектора целиком, а не два числа из них</h2></header>
+      <p class="claim">ROC-AUC и average precision в Р5 — это две точки сводки над кривой.
+        Здесь сама кривая: как меняется поведение модели при каждом возможном пороге.
+        Все оценки получены out-of-fold по тем же purged walk-forward разбиениям,
+        на одном мире сида {{ curves.seed }}.</p>
+
+      {% set fx = curves.at('account','forest') %}
+      {% if fx %}
+      <div class="probe">
+        <div>
+          <div class="v">{{ '%.4f'|format(fx.roc_auc) }}</div>
+          <div class="k">ROC-AUC, лес по счетам</div>
+          <div class="n">Вероятность того, что случайный мошенник получит оценку выше,
+            чем случайный честный счёт.</div>
+        </div>
+        <div>
+          <div class="v">{{ '%.4f'|format(fx.average_precision) }}</div>
+          <div class="k">Average precision</div>
+          <div class="n">Площадь под кривой точность-полнота. При доле мошенников
+            {{ '%.1f'|format(fx.base_rate * 100) }}% случайная модель дала бы примерно
+            {{ '%.3f'|format(fx.base_rate) }}.</div>
+        </div>
+        <div>
+          <div class="v">{{ '%.4f'|format(fx.brier) }}</div>
+          <div class="k">Brier score</div>
+          <div class="n">Средний квадрат ошибки оценки как вероятности. Меньше лучше;
+            ноль означал бы идеальное совпадение с истиной.</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="cols">
+        <figure>
+          <svg viewBox="0 0 {{ roc_chart.canvas }} {{ roc_chart.height + 30 }}" role="img"
+               aria-label="ROC-кривые трёх моделей на счётном уровне">
+            {% for label, gy in roc_chart.ticks_y %}
+              <line x1="{{ roc_chart.pad_left }}" y1="{{ gy }}" x2="{{ roc_chart.width }}" y2="{{ gy }}"
+                    stroke="#E7EBEF" stroke-width="1"/>
+              <text x="{{ roc_chart.pad_left - 6 }}" y="{{ gy + 3 }}" text-anchor="end" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+            {% endfor %}
+            {% for label, gx in roc_chart.ticks_x %}
+              <text x="{{ gx }}" y="{{ roc_chart.height + 13 }}" text-anchor="middle" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+            {% endfor %}
+            <line x1="{{ roc_chart.diagonal.x1 }}" y1="{{ roc_chart.diagonal.y1 }}"
+                  x2="{{ roc_chart.diagonal.x2 }}" y2="{{ roc_chart.diagonal.y2 }}"
+                  stroke="#778394" stroke-width="1" stroke-dasharray="3 3"/>
+            {% for line in roc_chart.lines %}
+              <polyline points="{{ line.series.points }}" fill="none"
+                        stroke="{{ line.colour }}" stroke-width="1.8"/>
+            {% endfor %}
+            <text x="{{ roc_chart.width }}" y="{{ roc_chart.height + 26 }}" text-anchor="end"
+                  font-size="9" font-family="IBM Plex Sans, sans-serif" fill="#778394">
+              доля ложных тревог →</text>
+          </svg>
+          <figcaption><span><b>Рис. 6.</b> ROC: пунктир — случайное угадывание</span>
+            <span class="src">detector_curves.json</span></figcaption>
+        </figure>
+
+        <figure>
+          <svg viewBox="0 0 {{ pr_chart.canvas }} {{ pr_chart.height + 30 }}" role="img"
+               aria-label="Кривые точность-полнота трёх моделей">
+            {% for label, gy in pr_chart.ticks_y %}
+              <line x1="{{ pr_chart.pad_left }}" y1="{{ gy }}" x2="{{ pr_chart.width }}" y2="{{ gy }}"
+                    stroke="#E7EBEF" stroke-width="1"/>
+              <text x="{{ pr_chart.pad_left - 6 }}" y="{{ gy + 3 }}" text-anchor="end" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+            {% endfor %}
+            {% for label, gx in pr_chart.ticks_x %}
+              <text x="{{ gx }}" y="{{ pr_chart.height + 13 }}" text-anchor="middle" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+            {% endfor %}
+            {% if fx %}
+            <line x1="{{ pr_chart.pad_left }}" y1="{{ pr_chart.height - fx.base_rate * (pr_chart.height - pr_chart.pad_left / 4) }}"
+                  x2="{{ pr_chart.width }}" y2="{{ pr_chart.height - fx.base_rate * (pr_chart.height - pr_chart.pad_left / 4) }}"
+                  stroke="#778394" stroke-width="1" stroke-dasharray="3 3"/>
+            {% endif %}
+            {% for line in pr_chart.lines %}
+              <polyline points="{{ line.series.points }}" fill="none"
+                        stroke="{{ line.colour }}" stroke-width="1.8"/>
+            {% endfor %}
+            <text x="{{ pr_chart.width }}" y="{{ pr_chart.height + 26 }}" text-anchor="end"
+                  font-size="9" font-family="IBM Plex Sans, sans-serif" fill="#778394">
+              полнота →</text>
+          </svg>
+          <figcaption><span><b>Рис. 7.</b> Точность против полноты; пунктир — уровень случайной модели</span>
+            <span class="src">detector_curves.json</span></figcaption>
+        </figure>
+      </div>
+
+      <div style="display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;font-size:11px;color:#4C596A">
+        {% for line in roc_chart.lines %}
+          <span><i style="display:inline-block;width:14px;height:3px;background:{{ line.colour }};vertical-align:middle"></i>
+            {{ line.name }}</span>
+        {% endfor %}
+      </div>
+
+      <p class="plain">Две кривые об одном и том же, но отвечают на разные вопросы.
+        ROC спрашивает, умеет ли модель отличать; кривая точность-полнота спрашивает,
+        сколько мусора придёт вместе с находками. При доле мошенников
+        {{ '%.1f'|format(fx.base_rate * 100) }}% вторая кривая жёстче: правила с ROC-AUC
+        {{ '%.3f'|format(curves.at('account','rules').roc_auc) }} на ней падают до
+        AP {{ '%.3f'|format(curves.at('account','rules').average_precision) }}, то есть
+        почти до уровня случайного выбора.</p>
+
+      <div class="cols">
+        <figure>
+          <svg viewBox="0 0 {{ cal_chart.canvas }} {{ cal_chart.height + 30 }}" role="img"
+               aria-label="Калибровка: заявленная вероятность против фактической доли мошенников">
+            {% for label, gy in cal_chart.ticks_y %}
+              <line x1="{{ cal_chart.pad_left }}" y1="{{ gy }}" x2="{{ cal_chart.width }}" y2="{{ gy }}"
+                    stroke="#E7EBEF" stroke-width="1"/>
+              <text x="{{ cal_chart.pad_left - 6 }}" y="{{ gy + 3 }}" text-anchor="end" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+            {% endfor %}
+            {% for label, gx in cal_chart.ticks_x %}
+              <text x="{{ gx }}" y="{{ cal_chart.height + 13 }}" text-anchor="middle" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+            {% endfor %}
+            <line x1="{{ cal_chart.diagonal.x1 }}" y1="{{ cal_chart.diagonal.y1 }}"
+                  x2="{{ cal_chart.diagonal.x2 }}" y2="{{ cal_chart.diagonal.y2 }}"
+                  stroke="#778394" stroke-width="1" stroke-dasharray="3 3"/>
+            {% for line in cal_chart.lines %}
+              <polyline points="{{ line.series.points }}" fill="none"
+                        stroke="{{ line.colour }}" stroke-width="1.8"/>
+              {% for cx, cy in line.series.dots %}
+                <circle cx="{{ cx }}" cy="{{ cy }}" r="3" fill="{{ line.colour }}"/>
+              {% endfor %}
+            {% endfor %}
+            <text x="{{ cal_chart.width }}" y="{{ cal_chart.height + 26 }}" text-anchor="end"
+                  font-size="9" font-family="IBM Plex Sans, sans-serif" fill="#778394">
+              оценка модели →</text>
+          </svg>
+          <figcaption><span><b>Рис. 8.</b> Калибровка: по вертикали доля мошенников в корзине</span>
+            <span class="src">detector_curves.json</span></figcaption>
+        </figure>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th class="l">Корзина оценок</th><th>Объектов</th>
+              <th>Средняя оценка</th><th>Мошенников</th></tr></thead>
+            <tbody>
+            {% for b in fx.calibration %}
+              <tr {% if b.count == 0 %}style="opacity:.45"{% endif %}>
+                <td class="l">{{ '%.1f'|format(b.low) }} – {{ '%.1f'|format(b.high) }}</td>
+                <td>{{ b.count }}</td>
+                <td>{% if b.mean_score is not none %}{{ '%.3f'|format(b.mean_score) }}{% else %}—{% endif %}</td>
+                <td>{% if b.fraud_share is not none %}{{ '%.1f'|format(b.fraud_share * 100) }}%{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot><tr><td colspan="4">Корзина, куда модель никого не поставила, оставлена
+              в таблице бледной: пустота в верхней половине шкалы — тоже результат.</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <figure>
+        <svg viewBox="0 0 {{ hist_chart.canvas }} {{ hist_chart.height + 26 }}" role="img"
+             aria-label="Распределение оценок: честные счета против мошеннических">
+          {% for label, gy in hist_chart.ticks_y %}
+            <line x1="{{ hist_chart.pad_left }}" y1="{{ gy }}" x2="{{ hist_chart.width }}" y2="{{ gy }}"
+                  stroke="#E7EBEF" stroke-width="1"/>
+            <text x="{{ hist_chart.pad_left - 6 }}" y="{{ gy + 3 }}" text-anchor="end" font-size="8.5"
+                  font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+          {% endfor %}
+          {% for b in hist_chart.bars %}
+            <rect x="{{ b.x }}" y="{{ b.honest_y }}" width="{{ b.w - 1 }}" height="{{ b.honest_h }}"
+                  fill="#4C596A" fill-opacity="0.35"/>
+            <rect x="{{ b.x }}" y="{{ b.fraud_y }}" width="{{ b.w - 1 }}" height="{{ b.fraud_h }}"
+                  fill="#A8261F" fill-opacity="0.8"/>
+          {% endfor %}
+          {% for label, gx in hist_chart.ticks_x %}
+            <text x="{{ gx }}" y="{{ hist_chart.height + 13 }}" text-anchor="middle" font-size="8.5"
+                  font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+          {% endfor %}
+          <text x="{{ hist_chart.width }}" y="{{ hist_chart.height + 23 }}" text-anchor="end"
+                font-size="9" font-family="IBM Plex Sans, sans-serif" fill="#778394">
+            оценка модели →</text>
+        </svg>
+        <figcaption><span><b>Рис. 9.</b> Распределение оценок: серое — честные счета,
+          красное — мошеннические. Вертикальная шкала логарифмическая</span>
+          <span class="src">detector_curves.json</span></figcaption>
+      </figure>
+
+      <p class="plain">Логарифмическая шкала здесь не украшение. Честных счетов в мире
+        {{ (fx.rows - fx.positives) }} против {{ fx.positives }} мошеннических, и на обычной
+        шкале красные столбики были бы толщиной в линию. Видно главное: масса честных
+        прижата к левому краю, мошенники размазаны вправо, а перекрытие в середине —
+        это и есть те дела, на которых аналитик тратит время впустую.</p>
+
+      <h3>Что достаётся аналитику при списке фиксированной длины</h3>
+      <p class="claim">Вопрос, который ROC-AUC не задаёт: если проверять только верхние
+        N процентов списка, сколько из проверенных окажутся мошенниками.</p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th class="l">Бюджет проверок</th><th>Дел в списке</th><th>Из них мошенников</th>
+            <th>Точность</th><th>Полнота</th><th>Проверок на находку</th></tr></thead>
+          <tbody>
+          {% for b in fx.budget %}
+            <tr {% if b.budget_share == 0.1 %}class="hl"{% endif %}>
+              <td class="l">верхние {{ '%.0f'|format(b.budget_share * 100) }}%</td>
+              <td>{{ b.reviewed }}</td><td>{{ b.caught }}</td>
+              <td>{{ '%.3f'|format(b.precision) }}</td>
+              <td>{% if b.recall is not none %}{{ '%.3f'|format(b.recall) }}{% else %}—{% endif %}</td>
+              <td>{% if b.reviews_per_catch is not none %}{{ '%.2f'|format(b.reviews_per_catch) }}{% else %}—{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot><tr><td colspan="6">Лес по счетам, {{ fx.rows }} строк,
+            {{ fx.positives }} мошеннических, {{ fx.folds }} фолдов out-of-fold.
+            Источник: {{ curves_meta.source }}</td></tr></tfoot>
+        </table>
+      </div>
+
+      <p class="caveat">Это один сид, а не среднее по десяти, как в Р1 и Р5. Сравнивать
+        числа отсюда с числами оттуда напрямую нельзя: разброс между сидами виден
+        на Рис. 1 бледной полосой.</p>
+    </section>
+    {% endif %}
+
+    {# ══════════════ Формулы ══════════════ #}
+    <section class="res" id="r8">
+      <header><span class="rid">Р8</span><h2>Формулы, по которым всё считается</h2></header>
       <p class="claim">Выписаны из кода, а не из доклада. Рядом с каждой — файл и константы,
         которые в ней стоят.</p>
 
@@ -665,8 +892,8 @@
 
     {# ══════════════ Р7 ══════════════ #}
     {% if features %}
-    <section class="res" id="r8">
-      <header><span class="rid">Р8</span><h2>Ни один признак не тянет решение в одиночку</h2></header>
+    <section class="res" id="r9">
+      <header><span class="rid">Р9</span><h2>Ни один признак не тянет решение в одиночку</h2></header>
       <p class="claim">Девять признаков считает детектор, а не генератор: это следствие одного
         из дефектов, найденных у себя. Разброс вклада — в два с половиной раза, а не в двадцать.</p>
       <div class="cols">
@@ -703,8 +930,8 @@
     {# ══════════════ Р6 ══════════════ #}
     {# ══════════════ Дела в очереди ══════════════ #}
     {% if blocks %}
-    <section class="res" id="r9">
-      <header><span class="rid">Р9</span><h2>Что аналитик видит в очереди</h2></header>
+    <section class="res" id="r10">
+      <header><span class="rid">Р10</span><h2>Что аналитик видит в очереди</h2></header>
       <p class="claim">Порог выбран на прошлых отрезках и применён к последнему, которого модель
         не видела. Ниже настоящий выход конвейера: сколько дел выдано, сколько из них оказались
         настоящими, и сами дела.</p>
@@ -780,8 +1007,8 @@
     </section>
     {% endif %}
 
-    <section class="res" id="r10">
-      <header><span class="rid">Р10</span><h2>Пять типологий и их структурные подписи</h2></header>
+    <section class="res" id="r11">
+      <header><span class="rid">Р11</span><h2>Пять типологий и их структурные подписи</h2></header>
       <p class="claim">Схема каждой типологии из <code>domain/typologies.py</code>. Это рисунок
         формы, а не снимок данных: он объясняет, что именно ищет графовый уровень.</p>
       <div class="topo">
@@ -802,8 +1029,8 @@
 
     {# ══════════════ Р7 ══════════════ #}
     {% if queue.present %}
-    <section class="res" id="r11">
-      <header><span class="rid">Р11</span><h2>Мир, на котором всё это считалось</h2></header>
+    <section class="res" id="r12">
+      <header><span class="rid">Р12</span><h2>Мир, на котором всё это считалось</h2></header>
       <p class="claim">Прогон конвейера целиком, пресет «{{ queue.preset }}»,
         {{ '%.1f'|format(queue.seconds) }} секунды на этой машине.</p>
       <div class="tw">

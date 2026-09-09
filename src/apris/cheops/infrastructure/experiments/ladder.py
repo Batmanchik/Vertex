@@ -575,6 +575,26 @@ def _pooled_out_of_fold(
     return np.array(predictions), np.array(truths), used
 
 
+def out_of_fold_scores(
+    rows: Sequence[Row], scope: str, model_name: str
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """The scores behind one cell of the grid, before they become metrics.
+
+    ``evaluate_cell`` reduces these to ROC-AUC and average precision. A curve
+    needs the scores themselves, so both callers go through the same walk and
+    cannot drift into measuring different things.
+    """
+    if not rows:
+        return np.array([]), np.array([]), 0
+    if model_name == "rules":
+        rule_scope = "account" if scope == "account" else "network"
+        scores = rule_scores(rows, rule_scope)
+        truths = np.array([r.label for r in rows], dtype=int)
+        return scores, truths, 0
+    columns = sorted(rows[0].features)
+    return _pooled_out_of_fold(rows, columns, model_name)
+
+
 def evaluate_cell(rows: Sequence[Row], scope: str, model_name: str) -> CellResult:
     rule_scope = "account" if scope == "account" else "network"
     columns = sorted(rows[0].features) if rows else []
@@ -724,6 +744,7 @@ __all__ = [
     "build_account_rows",
     "build_network_rows",
     "evaluate_cell",
+    "out_of_fold_scores",
     "rule_scores",
     "run_ladder",
     "write_report",
