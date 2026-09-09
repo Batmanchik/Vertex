@@ -122,6 +122,75 @@ curl -s -X POST localhost:8000/api/v2/score \
 
 ---
 
+## Windows: с нуля, по шагам
+
+Всё ниже набирается в PowerShell. Открыть его: **Win + R**, набрать
+`powershell`, Enter. Откроется чёрное окно с приглашением `PS C:\Users\Имя>`.
+
+**Шаг 1. Перейти в папку проекта.** Если проект лежит в `C:\Users\Имя\Vertex`:
+
+```powershell
+cd C:\Users\Имя\Vertex
+```
+
+Проще всего узнать путь так: открыть папку проекта в проводнике, щёлкнуть по
+адресной строке, скопировать и вставить после `cd` (вставка в PowerShell делается
+правой кнопкой мыши).
+
+**Шаг 2. Поднять систему одной командой.**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start
+```
+
+Скрипт сам создаст виртуальное окружение `.venv`, поставит зависимости и
+запустит API и интерфейс. Первый запуск идёт несколько минут, дальше секунды.
+Флаг `-ExecutionPolicy Bypass` нужен потому, что Windows по умолчанию не даёт
+запускать скачанные `.ps1`.
+
+После этого открываются два адреса:
+
+| адрес | что там |
+|---|---|
+| `http://127.0.0.1:8000/` | витрина измерений, одиннадцать разделов |
+| `http://127.0.0.1:8501/` | интерфейс аналитика |
+
+Остановить: `powershell -ExecutionPolicy Bypass -File scripts\app.ps1 stop`.
+
+**Шаг 3. Запустить обучение.** Открыть **второе** окно PowerShell (первое пусть
+работает), перейти в ту же папку и выполнить одной строкой:
+
+```powershell
+.venv\Scripts\python.exe scripts\run_experiment_ladder.py --seeds 1 --days 30 --mule-networks 8 --pyramids 2 --crowd-collections 8 --family-circles 15 --employers 6 --terminals 12 --out demo.json
+```
+
+Команда должна идти в одну строку. Обратный слэш `\` для переноса, как в
+примерах для Linux, в PowerShell не работает: там перенос делается обратной
+кавычкой `` ` ``.
+
+**Шаг 4. Отправить кейс в API.**
+
+```powershell
+curl.exe -s -X POST localhost:8000/api/v2/score -H "Content-Type: application/json" -d "@docs/references/demo_case.json"
+```
+
+Именно `curl.exe`, а не `curl`. В PowerShell слово `curl` это псевдоним для
+`Invoke-WebRequest`, у которого другие флаги, и команда упадёт с ошибкой про
+параметр `-X`.
+
+Ответ придёт одной длинной строкой. Чтобы читалось по-человечески:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:8000/api/v2/score -Method Post -ContentType "application/json" -InFile docs\references\demo_case.json | ConvertTo-Json -Depth 5
+```
+
+**Если Python не установлен вообще.** Скрипт из шага 2 сообщит об этом. Ставить
+с python.org, версия 3.11 или новее, и при установке обязательно отметить
+галочку **Add python.exe to PATH** на первом экране установщика.
+
+
+---
+
 ## Если спросят «а где сам код модели»
 
 Три файла, их можно открыть прямо в аудитории:
