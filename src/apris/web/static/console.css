@@ -176,6 +176,14 @@ footer code{font-family:var(--mono);font-size:11px;background:#E7EBEF;padding:1p
 .fd b{color:var(--ink)}
 .fitem .src{display:block;margin-top:8px;color:var(--ink-3)}
 
+/* ── таблица с текстом в ячейках, а не с числами ── */
+.tw.prose table{min-width:640px}
+.tw.prose td{white-space:normal;vertical-align:top;line-height:1.45}
+.tw.prose td.l{color:var(--ink-2)}
+.tw.prose tbody td:first-child{color:var(--ink);font-weight:600;width:15%}
+.tw.prose .mono{font-size:11px;color:var(--accent)}
+.res h3{margin-top:22px;font-size:13px;color:var(--ink)}
+
 /* ── очередь ── */
 .bstat{border:1px solid var(--rule);background:var(--sheet);padding:14px 16px}
 .bhead{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:11px}

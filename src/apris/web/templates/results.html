@@ -33,11 +33,12 @@
       <li><a href="#r3"><span class="k">Р3</span><span>Редкость</span></a></li>
       <li><a href="#r4"><span class="k">Р4</span><span>Параметр W</span></a></li>
       <li><a href="#r5"><span class="k">Р5</span><span>Сравнение моделей</span></a></li>
-      <li><a href="#r6"><span class="k">Р6</span><span>Формулы</span></a></li>
-      <li><a href="#r7"><span class="k">Р7</span><span>Признаки модели</span></a></li>
-      <li><a href="#r8"><span class="k">Р8</span><span>Дела в очереди</span></a></li>
-      <li><a href="#r9"><span class="k">Р9</span><span>Типологии схем</span></a></li>
-      <li><a href="#r10"><span class="k">Р10</span><span>Состав мира</span></a></li>
+      <li><a href="#r6"><span class="k">Р6</span><span>Алгоритмы обучения</span></a></li>
+      <li><a href="#r7"><span class="k">Р7</span><span>Формулы</span></a></li>
+      <li><a href="#r8"><span class="k">Р8</span><span>Признаки модели</span></a></li>
+      <li><a href="#r9"><span class="k">Р9</span><span>Дела в очереди</span></a></li>
+      <li><a href="#r10"><span class="k">Р10</span><span>Типологии схем</span></a></li>
+      <li><a href="#r11"><span class="k">Р11</span><span>Состав мира</span></a></li>
     </ol>
     <div class="facts">
       <div class="lbl">Опорные числа</div>
@@ -444,9 +445,116 @@
     </section>
     {% endif %}
 
-    {# ══════════════ Формулы ══════════════ #}
+    {# ══════════════ Р6 ══════════════ #}
     <section class="res" id="r6">
-      <header><span class="rid">Р6</span><h2>Формулы, по которым всё считается</h2></header>
+      <header><span class="rid">Р6</span><h2>Чем именно учится модель</h2></header>
+      <p class="claim">Выше сравнивались четыре подхода. Здесь выписано, что стоит за каждым
+        названием: класс модели, её настройки и способ проверки. Всё взято из кода прогона,
+        а не из описания в докладе.</p>
+
+      <div class="tw prose">
+        <table>
+          <thead><tr><th class="l">Название на графике</th><th class="l">Что это на самом деле</th>
+            <th class="l">Настройки</th><th class="l">Чему учится</th></tr></thead>
+          <tbody>
+            <tr><td class="l">Правила</td><td class="l">Пороговые критерии, обучения нет</td>
+              <td class="l">Пороги заданы вручную</td>
+              <td class="l">Ничему. Считает признаки счёта и складывает срабатывания</td></tr>
+            <tr><td class="l">Логистич.</td><td class="l"><span class="mono">StandardScaler</span> →
+              <span class="mono">LogisticRegression</span></td>
+              <td class="l">max_iter = 2000, class_weight = balanced</td>
+              <td class="l">Один вес на признак. Знак веса читается напрямую</td></tr>
+            <tr class="hl"><td class="l">Лес</td><td class="l"><span class="mono">RandomForestClassifier</span></td>
+              <td class="l">300 деревьев, min_samples_leaf = 3, class_weight = balanced</td>
+              <td class="l">Сочетания признаков и нелинейные пороги. Даёт лучший результат в Р5</td></tr>
+            <tr><td class="l">Бустинг</td><td class="l"><span class="mono">GradientBoostingClassifier</span></td>
+              <td class="l">Настройки по умолчанию: 100 деревьев, learning_rate 0.1, глубина 3</td>
+              <td class="l">То же, но деревья строятся последовательно, каждое исправляет предыдущее</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="4">Все три обучаемые модели из scikit-learn, random_state = 20261005,
+            один и тот же набор признаков. Счёт попадает в выборку, если у него не меньше 10 событий:
+            по одному переводу поток не считается. Источник: cheops/infrastructure/experiments/ladder.py</td></tr></tfoot>
+        </table>
+      </div>
+
+      <p class="plain">Разница между строками таблицы в том, сколько форм зависимости модель
+        способна выучить. Правила смотрят на каждый признак отдельно и по фиксированному порогу.
+        Логистическая складывает признаки с весами, но зависимость остаётся прямой линией.
+        Лес и бустинг строят деревья и поэтому ловят условия вида «высокий сквозной поток
+        <b>и при этом</b> короткое удержание», а такое сочетание и есть подпись дроппера.
+        Отсюда разрыв {{ '%.3f'|format(matrix.at('account','rules').roc_auc) }} против
+        {{ '%.3f'|format(matrix.at('account','forest').roc_auc) }} на счётном уровне.</p>
+
+      <h3>Как модель проверяется</h3>
+      <div class="fgrid">
+        <div class="fitem">
+          <div class="fx">purged walk-forward, 5 разбиений</div>
+          <p class="fd">Объекты упорядочены по времени. Модель учится на прошлом и проверяется
+            на следующем блоке, и так пять раз с расширением окна. Обычная перемешанная
+            кросс-валидация здесь завысила бы результат: она позволяет учиться на будущем.</p>
+          <span class="src">ml/validation_v2.py · purged_walk_forward_splits</span>
+        </div>
+        <div class="fitem">
+          <div class="fx">purge = 3 суток</div>
+          <p class="fd">Кейс занимает окно событий, поэтому кейс, чьё окно пересекает границу
+            разбиения, тащит в обучение сведения из проверочного периода. Такие строки
+            выбрасываются. Это стоит нескольких строк выборки и убирает утечку.</p>
+          <span class="src">ml/validation_v2.py · purge=timedelta(days=3)</span>
+        </div>
+        <div class="fitem">
+          <div class="fx">изотоническая калибровка</div>
+          <p class="fd">Оценка модели монотонно перекладывается в вероятность по отложенной части
+            выборки. Нужна для порога: без калибровки 0.8 у леса и 0.8 у бустинга означают
+            разную частоту мошенничества, и общий порог для очереди аналитика не задать.</p>
+          <span class="src">sklearn IsotonicRegression, ml/tabular_v2.py</span>
+        </div>
+        <div class="fitem">
+          <div class="fx">PSI, порог 0.10 ⁄ 0.25</div>
+          <p class="fd">Population Stability Index сравнивает распределение каждого признака
+            с эталонным профилем. До 0.10 распределение считается устойчивым, до 0.25 умеренный
+            сдвиг, выше 0.25 сильный: модель обучена на другом мире, чем тот, что пришёл.</p>
+          <span class="src">ml/drift_v2.py · _drift_level</span>
+        </div>
+      </div>
+
+      <h3>Вторая ветка кода: ансамбль v2</h3>
+      <p class="claim">Кроме измеренного детектора в репозитории лежит ансамбль из трёх веток
+        LightGBM. Он обслуживает <span class="mono">/api/v2/score</span>, но обученного артефакта
+        в <code>artifacts/</code> нет, поэтому ни одно число на этой странице им не получено.</p>
+
+      <div class="tw prose">
+        <table>
+          <thead><tr><th class="l">Ветка</th><th class="l">На чём считает</th>
+            <th class="l">Модель</th><th class="l">Файл</th></tr></thead>
+          <tbody>
+            <tr><td class="l">Табличная</td><td class="l">Признаки счёта; отдельная модель на каждую типологию плюс общая</td>
+              <td class="l">LGBMClassifier + изотоника</td><td class="l">ml/tabular_v2.py</td></tr>
+            <tr><td class="l">Последовательности</td><td class="l">Ритм событий: частота в час, всплески за 90 секунд, разброс сумм</td>
+              <td class="l">LGBMClassifier + изотоника</td><td class="l">ml/sequence_v2.py</td></tr>
+            <tr><td class="l">Граф</td><td class="l">Пять структурных признаков окружения счёта</td>
+              <td class="l">LGBMClassifier + изотоника</td><td class="l">ml/graph_v2.py</td></tr>
+            <tr><td class="l">Сшивка</td><td class="l">Три вероятности с веток как три признака</td>
+              <td class="l">LogisticRegression + изотоника</td><td class="l">ml/fusion_v2.py</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="4">Настройки всех трёх веток одинаковые:
+            n_estimators = 220, learning_rate = 0.05, max_depth = 6, min_child_samples = 8.
+            Схема называется стекингом: базовые модели дают вероятности, метамодель учится
+            им доверять по-разному. Перед графовой веткой события прореживает
+            One-Side Edge Sampling: ребро сохраняется, если его выбрал хотя бы один из концов,
+            с вероятностью min(1, 50 ⁄ степень). Это срезает узлы-концентраторы вроде биржевых
+            кошельков и оставляет нетронутой топологию счетов с малой степенью.</td></tr></tfoot>
+        </table>
+      </div>
+
+      <p class="caveat"><b>Что здесь важно не перепутать.</b> Все числа на этой странице
+        получены детектором <span class="mono">{{ worlds_meta.detector }}</span>, то есть случайным
+        лесом из scikit-learn. Ансамбль LightGBM выше существует как код и обучается скриптом,
+        но обученной модели в репозитории нет и метрик для него мы не приводим.</p>
+    </section>
+
+    {# ══════════════ Формулы ══════════════ #}
+    <section class="res" id="r7">
+      <header><span class="rid">Р7</span><h2>Формулы, по которым всё считается</h2></header>
       <p class="claim">Выписаны из кода, а не из доклада. Рядом с каждой — файл и константы,
         которые в ней стоят.</p>
 
@@ -528,8 +636,8 @@
 
     {# ══════════════ Р7 ══════════════ #}
     {% if features %}
-    <section class="res" id="r7">
-      <header><span class="rid">Р7</span><h2>Ни один признак не тянет решение в одиночку</h2></header>
+    <section class="res" id="r8">
+      <header><span class="rid">Р8</span><h2>Ни один признак не тянет решение в одиночку</h2></header>
       <p class="claim">Девять признаков считает детектор, а не генератор: это следствие одного
         из дефектов, найденных у себя. Разброс вклада — в два с половиной раза, а не в двадцать.</p>
       <div class="cols">
@@ -566,8 +674,8 @@
     {# ══════════════ Р6 ══════════════ #}
     {# ══════════════ Дела в очереди ══════════════ #}
     {% if blocks %}
-    <section class="res" id="r8">
-      <header><span class="rid">Р8</span><h2>Что аналитик видит в очереди</h2></header>
+    <section class="res" id="r9">
+      <header><span class="rid">Р9</span><h2>Что аналитик видит в очереди</h2></header>
       <p class="claim">Порог выбран на прошлых отрезках и применён к последнему, которого модель
         не видела. Ниже настоящий выход конвейера: сколько дел выдано, сколько из них оказались
         настоящими, и сами дела.</p>
@@ -643,8 +751,8 @@
     </section>
     {% endif %}
 
-    <section class="res" id="r9">
-      <header><span class="rid">Р9</span><h2>Пять типологий и их структурные подписи</h2></header>
+    <section class="res" id="r10">
+      <header><span class="rid">Р10</span><h2>Пять типологий и их структурные подписи</h2></header>
       <p class="claim">Схема каждой типологии из <code>domain/typologies.py</code>. Это рисунок
         формы, а не снимок данных: он объясняет, что именно ищет графовый уровень.</p>
       <div class="topo">
@@ -665,8 +773,8 @@
 
     {# ══════════════ Р7 ══════════════ #}
     {% if queue.present %}
-    <section class="res" id="r10">
-      <header><span class="rid">Р10</span><h2>Мир, на котором всё это считалось</h2></header>
+    <section class="res" id="r11">
+      <header><span class="rid">Р11</span><h2>Мир, на котором всё это считалось</h2></header>
       <p class="claim">Прогон конвейера целиком, пресет «{{ queue.preset }}»,
         {{ '%.1f'|format(queue.seconds) }} секунды на этой машине.</p>
       <div class="tw">
