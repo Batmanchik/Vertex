@@ -124,20 +124,43 @@ curl -s -X POST localhost:8000/api/v2/score \
 
 ## Windows: с нуля, по шагам
 
-Всё ниже набирается в PowerShell. Открыть его: **Win + R**, набрать
-`powershell`, Enter. Откроется чёрное окно с приглашением `PS C:\Users\Имя>`.
+Открыть командную строку: **Win + R**, набрать `cmd`, Enter. Откроется чёрное
+окно с приглашением вида `C:\Users\alibe>`. Всё, что ниже, набирается там.
 
-**Шаг 1. Перейти в папку проекта.** Если проект лежит в `C:\Users\Имя\Vertex`:
+**Шаг 1. Проверить, что нужно для запуска.**
 
-```powershell
-cd C:\Users\Имя\Vertex
+```
+git --version
+python --version
 ```
 
-Проще всего узнать путь так: открыть папку проекта в проводнике, щёлкнуть по
-адресной строке, скопировать и вставить после `cd` (вставка в PowerShell делается
-правой кнопкой мыши).
+Обе команды должны напечатать номер версии. Если Python отвечает «не является
+внутренней или внешней командой», поставьте его с python.org (версия 3.11 или
+новее) и обязательно отметьте галочку **Add python.exe to PATH** на первом
+экране установщика.
 
-**Шаг 2. Поднять систему одной командой.**
+**Шаг 2. Найти проект или скачать его.** Проверить, есть ли он уже на машине:
+
+```
+where /r C:\Users\%USERNAME% app.ps1
+```
+
+Команда напечатает полный путь к файлу `app.ps1`, если проект где-то лежит.
+Папка проекта это то, что идёт до `\scripts\app.ps1`.
+
+Если ничего не нашлось, забрать проект с GitHub:
+
+```
+cd C:\Users\%USERNAME%
+git clone https://github.com/Batmanchik/Vertex.git
+cd Vertex
+git checkout claude/documentation-review-improve-w17t1u
+```
+
+Дальше все команды выполняются из этой папки. `%USERNAME%` подставляется само,
+менять его на своё имя не нужно.
+
+**Шаг 3. Поднять систему одной командой.**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start
@@ -157,7 +180,7 @@ powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start
 
 Остановить: `powershell -ExecutionPolicy Bypass -File scripts\app.ps1 stop`.
 
-**Шаг 3. Запустить обучение.** Открыть **второе** окно PowerShell (первое пусть
+**Шаг 4. Запустить обучение.** Открыть **второе** окно `cmd` (первое пусть
 работает), перейти в ту же папку и выполнить одной строкой:
 
 ```powershell
@@ -168,25 +191,21 @@ powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start
 примерах для Linux, в PowerShell не работает: там перенос делается обратной
 кавычкой `` ` ``.
 
-**Шаг 4. Отправить кейс в API.**
+**Шаг 5. Отправить кейс в API.**
 
 ```powershell
 curl.exe -s -X POST localhost:8000/api/v2/score -H "Content-Type: application/json" -d "@docs/references/demo_case.json"
 ```
 
-Именно `curl.exe`, а не `curl`. В PowerShell слово `curl` это псевдоним для
-`Invoke-WebRequest`, у которого другие флаги, и команда упадёт с ошибкой про
-параметр `-X`.
+В `cmd` сработает и просто `curl`. Писать `curl.exe` обязательно в PowerShell:
+там `curl` это псевдоним для `Invoke-WebRequest`, у которого другие флаги, и
+команда упадёт с ошибкой про параметр `-X`.
 
 Ответ придёт одной длинной строкой. Чтобы читалось по-человечески:
 
 ```powershell
 Invoke-RestMethod -Uri http://localhost:8000/api/v2/score -Method Post -ContentType "application/json" -InFile docs\references\demo_case.json | ConvertTo-Json -Depth 5
 ```
-
-**Если Python не установлен вообще.** Скрипт из шага 2 сообщит об этом. Ставить
-с python.org, версия 3.11 или новее, и при установке обязательно отметить
-галочку **Add python.exe to PATH** на первом экране установщика.
 
 
 ---
