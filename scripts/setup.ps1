@@ -86,11 +86,33 @@ function Get-PythonCommand {
     # The Windows Store stub called python.exe exits without printing a version,
     # so a candidate counts only when it actually answers --version.
     $candidates = @(
-        @{ File = "py";     Args = @("-3.12") },
-        @{ File = "py";     Args = @("-3.11") },
-        @{ File = "py";     Args = @("-3") },
-        @{ File = "python"; Args = @() }
+        @{ File = "py";      Args = @("-3.13") },
+        @{ File = "py";      Args = @("-3.12") },
+        @{ File = "py";      Args = @("-3.11") },
+        @{ File = "py";      Args = @("-3") },
+        @{ File = "python";  Args = @() },
+        @{ File = "python3"; Args = @() }
     )
+
+    # An installer run without "Add to PATH" leaves a working interpreter that
+    # none of the names above reach, so the usual install directories are
+    # searched as well. Newest version first.
+    $roots = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\Python"),
+        "$env:ProgramFiles",
+        "C:\"
+    )
+    foreach ($root in $roots) {
+        if (-not (Test-Path $root)) { continue }
+        $found = Get-ChildItem -Path $root -Filter "Python3*" -Directory -ErrorAction SilentlyContinue |
+                 Sort-Object Name -Descending
+        foreach ($dir in $found) {
+            $exe = Join-Path $dir.FullName "python.exe"
+            if (Test-Path $exe) {
+                $candidates += @{ File = $exe; Args = @() }
+            }
+        }
+    }
 
     foreach ($candidate in $candidates) {
         try {
@@ -118,18 +140,61 @@ Write-Step "Проверяю, что установлено"
 
 $git = Get-Command git -ErrorAction SilentlyContinue
 if (-not $git) {
+    Write-Host "git не найден." -ForegroundColor Yellow
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Write-Host "Могу поставить его сам через winget."
+        $answer = Read-Host "Ставить? [Y/n]"
+        if ($answer -eq "" -or $answer -match "^[YyДд]") {
+            Write-Step "Ставлю git"
+            & winget install --id Git.Git -e --source winget `
+                --accept-package-agreements --accept-source-agreements
+            Write-Host ""
+            Write-Host "git установлен. Он появится в PATH только в новом окне." -ForegroundColor Yellow
+            Write-Host "Закройте это окно, откройте новое и запустите команду ещё раз."
+            return
+        }
+    }
     Write-Fail "не найден git."
-    Write-Host "Поставьте его с https://git-scm.com/download/win, все галочки оставьте по умолчанию,"
-    Write-Host "закройте это окно, откройте новое и запустите команду ещё раз."
+    Write-Host "Поставьте его одной командой:"
+    Write-Host "    winget install --id Git.Git -e --source winget" -ForegroundColor White
+    Write-Host "или скачайте с https://git-scm.com/download/win, галочки по умолчанию."
+    Write-Host "Потом закройте это окно, откройте новое и запустите команду ещё раз."
     return
 }
 Write-Host "git: $((& git --version) -join '')"
 
 $python = Get-PythonCommand
 if (-not $python) {
+    Write-Host "Python 3.10 или новее не найден." -ForegroundColor Yellow
+
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if ($winget) {
+        Write-Host "Могу поставить его сам через winget (Python 3.12, примерно минута)."
+        $answer = Read-Host "Ставить? [Y/n]"
+        if ($answer -eq "" -or $answer -match "^[YyДд]") {
+            Write-Step "Ставлю Python 3.12"
+            & winget install --id Python.Python.3.12 -e --source winget `
+                --accept-package-agreements --accept-source-agreements
+            # winget adds Python to PATH for new processes only, so the search
+            # below relies on the install directories rather than on PATH.
+            $python = Get-PythonCommand
+        }
+    }
+}
+
+if (-not $python) {
     Write-Fail "не найден Python 3.10 или новее."
-    Write-Host "Поставьте его с https://www.python.org/downloads/windows/ и обязательно отметьте"
-    Write-Host "галочку 'Add python.exe to PATH' на первом экране установщика."
+    Write-Host ""
+    Write-Host "Способ 1, через браузер:"
+    Write-Host "  открыть https://www.python.org/downloads/ , нажать большую кнопку"
+    Write-Host "  Download Python, запустить файл и на первом экране установщика"
+    Write-Host "  отметить галочку 'Add python.exe to PATH'." -ForegroundColor White
+    Write-Host "  Без этой галочки Python поставится, но команды его не увидят."
+    Write-Host ""
+    Write-Host "Способ 2, через магазин приложений:"
+    Write-Host "  открыть Microsoft Store, найти Python 3.12 и нажать Install."
+    Write-Host "  Эта версия прописывается в PATH сама."
+    Write-Host ""
     Write-Host "Потом закройте это окно, откройте новое и запустите команду ещё раз."
     return
 }
