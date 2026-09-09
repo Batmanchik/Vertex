@@ -1,6 +1,7 @@
 # Synced with [project.dependencies] in pyproject.toml
 fastapi>=0.104
 uvicorn[standard]>=0.24
+jinja2>=3.1
 streamlit>=1.42
 scikit-learn>=1.3
 pandas>=2.1

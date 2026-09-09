@@ -122,66 +122,65 @@ curl -s -X POST localhost:8000/api/v2/score \
 
 ---
 
-## Windows: с нуля, по шагам
+## Windows: одна команда
 
-Открыть командную строку: **Win + R**, набрать `cmd`, Enter. Откроется чёрное
-окно с приглашением вида `C:\Users\alibe>`. Всё, что ниже, набирается там.
-
-**Шаг 1. Проверить, что нужно для запуска.**
-
-```
-git --version
-python --version
-```
-
-Обе команды должны напечатать номер версии. Если Python отвечает «не является
-внутренней или внешней командой», поставьте его с python.org (версия 3.11 или
-новее) и обязательно отметьте галочку **Add python.exe to PATH** на первом
-экране установщика.
-
-**Шаг 2. Найти проект или скачать его.** Проверить, есть ли он уже на машине:
-
-```
-where /r C:\Users\%USERNAME% app.ps1
-```
-
-Команда напечатает полный путь к файлу `app.ps1`, если проект где-то лежит.
-Папка проекта это то, что идёт до `\scripts\app.ps1`.
-
-Если ничего не нашлось, забрать проект с GitHub:
-
-```
-cd C:\Users\%USERNAME%
-git clone https://github.com/Batmanchik/Vertex.git
-cd Vertex
-git checkout claude/documentation-review-improve-w17t1u
-```
-
-Дальше все команды выполняются из этой папки. `%USERNAME%` подставляется само,
-менять его на своё имя не нужно.
-
-**Шаг 3. Поднять систему одной командой.**
+Открыть PowerShell: **Win + R**, набрать `powershell`, Enter. Вставить эту
+строку (вставка правой кнопкой мыши) и нажать Enter:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start
+irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1 | iex
 ```
 
-Скрипт сам создаст виртуальное окружение `.venv`, поставит зависимости и
-запустит API и интерфейс. Первый запуск идёт несколько минут, дальше секунды.
-Флаг `-ExecutionPolicy Bypass` нужен потому, что Windows по умолчанию не даёт
-запускать скачанные `.ps1`.
+Скрипт делает всё сам: проверяет git и Python, скачивает проект в
+`C:\Users\<вы>\Vertex`, создаёт окружение `.venv`, ставит зависимости,
+поднимает сервер и открывает витрину в браузере. Первый запуск идёт несколько
+минут, повторный секунды. Запускать можно сколько угодно раз: уже скачанный
+проект не скачивается заново, а обновляется.
 
-После этого открываются два адреса:
+Менять политику запуска скриптов не нужно: команда ничего не сохраняет на диск
+как `.ps1`, поэтому запрет Windows на неподписанные файлы её не касается.
+
+Если чего-то не хватает, скрипт скажет об этом по-русски и даст ссылку. Два
+случая, которые он не может решить сам:
+
+| что написал скрипт | что делать |
+|---|---|
+| не найден git | поставить с git-scm.com/download/win, галочки по умолчанию, потом **открыть новое окно** PowerShell |
+| не найден Python 3.10 или новее | поставить с python.org, обязательно отметить **Add python.exe to PATH** на первом экране, потом **открыть новое окно** |
+
+Новое окно после установки обязательно: старое не видит только что добавленные
+программы.
+
+### Что открывается
 
 | адрес | что там |
 |---|---|
 | `http://127.0.0.1:8000/` | витрина измерений, одиннадцать разделов |
-| `http://127.0.0.1:8501/` | интерфейс аналитика |
 
-Остановить: `powershell -ExecutionPolicy Bypass -File scripts\app.ps1 stop`.
+Сервер работает во втором окне, которое откроет скрипт. Остановить: закрыть это
+окно или нажать в нём Ctrl+C.
 
-**Шаг 4. Запустить обучение.** Открыть **второе** окно `cmd` (первое пусть
-работает), перейти в ту же папку и выполнить одной строкой:
+Интерфейс аналитика на Streamlit ставится отдельно и для показа не нужен:
+`.venv\Scripts\python.exe -m pip install streamlit`, затем
+`powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start`.
+
+### Полезные ключи
+
+```powershell
+# положить проект в другую папку
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1))) -Path D:\Vertex
+
+# поставить, но не запускать
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1))) -SkipStart
+```
+
+Когда проект уже скачан, проще запускать локальный файл:
+`powershell -ExecutionPolicy Bypass -File scripts\setup.ps1`.
+
+### Обучение живьём
+
+Открыть новое окно PowerShell, перейти в папку проекта (`cd $env:USERPROFILE\Vertex`)
+и выполнить одной строкой:
 
 ```powershell
 .venv\Scripts\python.exe scripts\run_experiment_ladder.py --seeds 1 --days 30 --mule-networks 8 --pyramids 2 --crowd-collections 8 --family-circles 15 --employers 6 --terminals 12 --out demo.json
@@ -191,7 +190,7 @@ powershell -ExecutionPolicy Bypass -File scripts\app.ps1 start
 примерах для Linux, в PowerShell не работает: там перенос делается обратной
 кавычкой `` ` ``.
 
-**Шаг 5. Отправить кейс в API.**
+### Кейс в API
 
 ```powershell
 curl.exe -s -X POST localhost:8000/api/v2/score -H "Content-Type: application/json" -d "@docs/references/demo_case.json"
