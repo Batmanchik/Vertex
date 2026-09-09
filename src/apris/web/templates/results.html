@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vertex — измерения</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="{{ url_for('web_static', path='console.css') }}">
+</head>
+<body>
+
+<div class="masthead">
+  <div class="in">
+    <div class="name">VER<b>TEX</b> · витрина измерений</div>
+    <dl>
+      <div><dt>детектор</dt><dd>{{ worlds_meta.detector }}</dd></div>
+      <div><dt>прогон</dt><dd>{{ worlds_meta.generated_at }}</dd></div>
+      <div><dt>сидов</dt><dd>{{ worlds_meta.seed_count }}</dd></div>
+      {% if worlds_meta.run_id %}<div><dt>run_id</dt><dd>{{ worlds_meta.run_id }}</dd></div>{% endif %}
+    </dl>
+  </div>
+</div>
+
+<div class="shell">
+
+  <nav class="rail">
+    <div class="lbl">Результаты</div>
+    <ol>
+      <li><a href="#r1"><span class="k">Р1</span><span>Лестница пяти миров</span></a></li>
+      <li><a href="#r2"><span class="k">Р2</span><span>Кривая уклонения</span></a></li>
+      <li><a href="#r3"><span class="k">Р3</span><span>Редкость</span></a></li>
+      <li><a href="#r4"><span class="k">Р4</span><span>Параметр W</span></a></li>
+      <li><a href="#r5"><span class="k">Р5</span><span>Признаки модели</span></a></li>
+      <li><a href="#r6"><span class="k">Р6</span><span>Типологии схем</span></a></li>
+      <li><a href="#r7"><span class="k">Р7</span><span>Мир и очередь</span></a></li>
+    </ol>
+    <div class="facts">
+      <div class="lbl">Опорные числа</div>
+      {% if worlds %}
+      <div class="fact"><span>потолок по счетам</span><b>{{ '%.3f'|format(worlds[3].account_coverage) }}</b></div>
+      <div class="fact"><span>AUC по группам, W4</span><b>{{ '%.4f'|format(worlds[3].network_auc) }}</b></div>
+      {% endif %}
+      {% if evasion %}
+      <div class="fact"><span>банд найдено, 3 счёта</span><b>{{ '%.3f'|format(evasion[2].found_share) }}</b></div>
+      {% endif %}
+      {% if flow_weight.present %}
+      <div class="fact"><span>прирост от W</span><b>{{ '%+.4f'|format(flow_weight.model.lift) }}</b></div>
+      {% endif %}
+      {% if queue.present %}
+      <div class="fact"><span>счетов в мире</span><b>{{ queue.world.accounts|int }}</b></div>
+      <div class="fact"><span>событий</span><b>{{ queue.world.events|int }}</b></div>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main>
+
+    <div class="intro">
+      <h1>Что система измерила на самом деле</h1>
+      <p class="sub">Каждое число ниже читается из файла прогона в <code>artifacts/</code>
+        при загрузке страницы. Ничего не вписано в шаблон руками: пересчитаете прогон —
+        поменяется страница. Под каждой таблицей указан файл, из которого она собрана.</p>
+      <p class="warn">Мир синтетический, и это условие эксперимента, а не оговорка.
+        Внешней валидации на публичном датасете в репозитории нет, поэтому её здесь и не заявлено.</p>
+    </div>
+
+    {# ══════════════ Р1 ══════════════ #}
+    <section class="res" id="r1">
+      <header><span class="rid">Р1</span><h2>Групповой уровень держит почти единицу там, где счётный проседает</h2></header>
+      <p class="claim">Один детектор прогоняется по пяти мирам. С каждой ступенью честная сторона
+        становится всё более похожей на мошенническую. Сравниваются два уровня: оценка каждого
+        счёта отдельно и оценка группы целиком.</p>
+
+      {% if worlds %}
+      <figure>
+        <svg viewBox="0 0 {{ wc.canvas }} {{ wc.height + 26 }}" role="img"
+             aria-label="ROC-AUC по пяти мирам на двух уровнях анализа">
+          {% for label, y in wc.ticks_y %}
+            <line x1="{{ wc.pad_left }}" y1="{{ y }}" x2="{{ wc.width }}" y2="{{ y }}" stroke="#E7EBEF"/>
+            <text x="{{ wc.pad_left - 6 }}" y="{{ y + 3 }}" text-anchor="end" font-size="8.5"
+                  font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+          {% endfor %}
+          <polyline points="{{ wc.network.points }}" fill="none" stroke="#2C6E52" stroke-width="1.8"/>
+          <polyline points="{{ wc.account.points }}" fill="none" stroke="#1B5B66" stroke-width="1.8"/>
+          {% for x, y in wc.network.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#2C6E52"/>{% endfor %}
+          {% for x, y in wc.account.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#1B5B66"/>{% endfor %}
+          {% for x in wc.missing_x %}
+            <g stroke="#A8261F" stroke-width="1.6">
+              <line x1="{{ x - 4 }}" y1="{{ wc.missing_y - 4 }}" x2="{{ x + 4 }}" y2="{{ wc.missing_y + 4 }}"/>
+              <line x1="{{ x + 4 }}" y1="{{ wc.missing_y - 4 }}" x2="{{ x - 4 }}" y2="{{ wc.missing_y + 4 }}"/>
+            </g>
+            <text x="{{ x - 8 }}" y="{{ wc.missing_y + 3 }}" text-anchor="end" font-size="8.5"
+                  font-family="IBM Plex Sans, sans-serif" fill="#A8261F">групп нет</text>
+          {% endfor %}
+          {% for key, x, note in wc.ticks_x %}
+            <text x="{{ x }}" y="{{ wc.height + 16 }}" text-anchor="middle" font-size="9.5"
+                  font-family="IBM Plex Mono, monospace" fill="#4C596A">{{ key }}</text>
+          {% endfor %}
+          <text x="{{ wc.pad_left + 8 }}" y="{{ wc.network.dots[0][1] - 7 }}" font-size="9"
+                font-family="IBM Plex Sans, sans-serif" fill="#2C6E52">по группам</text>
+          <text x="{{ wc.pad_left + 8 }}" y="{{ wc.account.dots[0][1] + 14 }}" font-size="9"
+                font-family="IBM Plex Sans, sans-serif" fill="#1B5B66">по счетам</text>
+        </svg>
+        <figcaption><span><b>Рис. 1.</b> ROC-AUC по мирам, среднее по {{ worlds_meta.seed_count }} сидам</span>
+          <span class="src">{{ worlds_meta.source }}</span></figcaption>
+      </figure>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th class="l">Мир</th><th class="l">Что добавили в честную сторону</th>
+            <th>По счетам</th><th>По группам</th><th>Покрытие</th></tr></thead>
+          <tbody>
+          {% for w in worlds %}
+            <tr {% if w.network_auc is none %}class="hl"{% endif %}>
+              <td class="l">{{ w.key }}</td><td class="l">{{ w.note }}</td>
+              <td>{{ '%.3f'|format(w.account_auc) }}</td>
+              {% if w.network_auc is none %}<td class="none">групп нет</td>
+              {% else %}<td>{{ '%.4f'|format(w.network_auc) }}</td>{% endif %}
+              <td>{{ '%.3f'|format(w.account_coverage) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot><tr><td colspan="5">Покрытие — доля мошеннических счетов, которые вообще
+            попали в оценку: у счёта меньше чем с десятью событиями не из чего считать признаки.
+            Источник: {{ worlds_meta.source }}</td></tr></tfoot>
+        </table>
+      </div>
+
+      <p class="plain">Проще говоря: пока у банды есть общая зацепка, группа видна почти идеально.
+        Как только организатор разносит деньги по шести счетам и четырём банкоматам, зацепка
+        исчезает, и групповой поиск <b>не ошибается, а перестаёт существовать</b>. Счётный уровень
+        этого даже не замечает.</p>
+    </section>
+    {% endif %}
+
+    {# ══════════════ Р2 ══════════════ #}
+    {% if evasion %}
+    <section class="res" id="r2">
+      <header><span class="rid">Р2</span><h2>Ломается на третьем счёте, а не на шестом</h2></header>
+      <p class="claim">Каждая ручка прокручена отдельно на мире W4. Организатор либо разносит
+        деньги по нескольким источникам, либо гоняет людей по нескольким банкоматам.</p>
+
+      <figure>
+        <svg viewBox="0 0 {{ ec.canvas }} {{ ec.height + 34 }}" role="img"
+             aria-label="Доля найденных банд против числа источников и банкоматов">
+          {% for label, y in ec.ticks_y %}
+            <line x1="{{ ec.pad_left }}" y1="{{ y }}" x2="{{ ec.width }}" y2="{{ y }}" stroke="#E7EBEF"/>
+            <text x="{{ ec.pad_left - 6 }}" y="{{ y + 3 }}" text-anchor="end" font-size="8.5"
+                  font-family="IBM Plex Mono, monospace" fill="#778394">{{ label }}</text>
+          {% endfor %}
+          <line x1="{{ ec.break_x }}" y1="10" x2="{{ ec.break_x }}" y2="{{ ec.height }}"
+                stroke="#A8261F" stroke-width="1" stroke-dasharray="3 3" opacity=".6"/>
+          <polyline points="{{ ec.atms.points }}" fill="none" stroke="#B4741C" stroke-width="1.8"/>
+          <polyline points="{{ ec.funders.points }}" fill="none" stroke="#A8261F" stroke-width="1.8"/>
+          {% for x, y in ec.atms.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#B4741C"/>{% endfor %}
+          {% for x, y in ec.funders.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#A8261F"/>{% endfor %}
+          {% for label, x in ec.ticks_x %}
+            <text x="{{ x }}" y="{{ ec.height + 16 }}" text-anchor="middle" font-size="9"
+                  font-family="IBM Plex Mono, monospace" fill="#4C596A">{{ label }}</text>
+          {% endfor %}
+          <text x="{{ (ec.width + ec.pad_left) // 2 }}" y="{{ ec.height + 30 }}" text-anchor="middle" font-size="8.5"
+                font-family="IBM Plex Sans, sans-serif" fill="#778394">сколько источников или банкоматов задействовано</text>
+          <text x="{{ ec.break_x + 5 }}" y="20" font-size="8.5"
+                font-family="IBM Plex Sans, sans-serif" fill="#A8261F">здесь ломается</text>
+          <text x="{{ ec.atms.dots[-1][0] + 6 }}" y="{{ ec.atms.dots[-1][1] + 3 }}" font-size="9"
+                font-family="IBM Plex Sans, sans-serif" fill="#B4741C">банкоматы</text>
+          <text x="{{ ec.funders.dots[-1][0] - 6 }}" y="{{ ec.funders.dots[-1][1] + 14 }}" text-anchor="end"
+                font-size="9" font-family="IBM Plex Sans, sans-serif" fill="#A8261F">источники денег</text>
+        </svg>
+        <figcaption><span><b>Рис. 2.</b> Доля найденных банд, {{ evasion[0].networks }} сетей на сид</span>
+          <span class="src">{{ evasion_meta.source }}</span></figcaption>
+      </figure>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th class="l">Настройка</th><th>Источников</th><th>Банкоматов</th>
+            <th>Найдено банд</th><th>Медиана перекрытия</th></tr></thead>
+          <tbody>
+          {% for e in evasion %}
+            <tr {% if e.key == 'f6t4' %}class="hl"{% endif %}>
+              <td class="l">{{ e.label }}</td><td>{{ e.funders }}</td><td>{{ e.atms }}</td>
+              <td>{{ '%.3f'|format(e.found_share) }}</td>
+              <td>{{ '%.3f'|format(e.median_overlap) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot><tr><td colspan="5">Источник: {{ evasion_meta.source }},
+            сиды {{ evasion_meta.seeds|join(', ') }}</td></tr></tfoot>
+        </table>
+      </div>
+
+      <p class="plain">Проще говоря: развезти людей по четырём банкоматам дорого и почти
+        бесполезно, три банды из четырёх всё равно найдутся. А разложить деньги на три счёта
+        ничего не стоит и роняет поиск с 1.000 до 0.667. <b>Самое дешёвое действие против нас
+        оказалось самым действенным</b>, и мы говорим об этом сами.</p>
+    </section>
+    {% endif %}
+
+    {# ══════════════ Р3 ══════════════ #}
+    {% if rarity %}
+    <section class="res" id="r3">
+      <header><span class="rid">Р3</span><h2>ROC-AUC почти не замечает того, что рушит работу аналитика</h2></header>
+      <p class="claim">Мошенников прореживают случайно до разбиения на обучение и тест, поэтому
+        модель и учится, и проверяется при этой редкости. Два графика рядом намеренно:
+        у метрик разный масштаб, и на одну ось их класть нельзя.</p>
+
+      <div class="cols">
+        <figure>
+          <svg viewBox="0 0 {{ rc1.width + 12 }} {{ rc1.height + 26 }}" role="img"
+               aria-label="ROC-AUC против доли мошенников">
+            {% for g, y in rc1.ticks_y %}
+              <line x1="{{ rc1.pad_left }}" y1="{{ y }}" x2="{{ rc1.width }}" y2="{{ y }}" stroke="#E7EBEF"/>
+              <text x="{{ rc1.pad_left - 6 }}" y="{{ y + 3 }}" text-anchor="end" font-size="8"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ '%.2f'|format(g) }}</text>
+            {% endfor %}
+            <polyline points="{{ rc1.line.points }}" fill="none" stroke="#1B5B66" stroke-width="1.8"/>
+            {% for x, y in rc1.line.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#1B5B66"/>{% endfor %}
+            {% for label, x in rc1.ticks_x %}
+              <text x="{{ x }}" y="{{ rc1.height + 15 }}" text-anchor="middle" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#4C596A">{{ label }}</text>
+            {% endfor %}
+          </svg>
+          <figcaption><span><b>Рис. 3.</b> ROC-AUC почти не двигается</span></figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 {{ rc2.width + 12 }} {{ rc2.height + 26 }}" role="img"
+               aria-label="Точность верхних десяти процентов против доли мошенников">
+            {% for g, y in rc2.ticks_y %}
+              <line x1="{{ rc2.pad_left }}" y1="{{ y }}" x2="{{ rc2.width }}" y2="{{ y }}" stroke="#E7EBEF"/>
+              <text x="{{ rc2.pad_left - 6 }}" y="{{ y + 3 }}" text-anchor="end" font-size="8"
+                    font-family="IBM Plex Mono, monospace" fill="#778394">{{ '%d'|format(g * 100) }}%</text>
+            {% endfor %}
+            <polyline points="{{ rc2.line.points }}" fill="none" stroke="#A8261F" stroke-width="1.8"/>
+            {% for x, y in rc2.line.dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#A8261F"/>{% endfor %}
+            {% for label, x in rc2.ticks_x %}
+              <text x="{{ x }}" y="{{ rc2.height + 15 }}" text-anchor="middle" font-size="8.5"
+                    font-family="IBM Plex Mono, monospace" fill="#4C596A">{{ label }}</text>
+            {% endfor %}
+          </svg>
+          <figcaption><span><b>Рис. 4.</b> Точность верхних 10% обваливается</span></figcaption>
+        </figure>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th class="l">Доля мошенников</th><th>Их в мире</th><th>ROC-AUC</th>
+            <th>Точность верхних 10%</th><th>Проверок на находку</th></tr></thead>
+          <tbody>
+          {% for r in rarity %}
+            <tr {% if loop.last %}class="hl"{% endif %}>
+              <td class="l">{{ '%.1f'|format(r.prevalence * 100) }}%</td>
+              <td>{{ r.positives }}</td>
+              <td>{{ '%.3f'|format(r.roc_auc) }}</td>
+              <td>{{ '%.1f'|format(r.precision_at_budget * 100) }}%</td>
+              <td>{{ '%.0f'|format(r.reviews_per_catch) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot><tr><td colspan="5">Проверок на находку — обратная величина точности.
+            Источник: {{ rarity_meta.source }}</td></tr></tfoot>
+        </table>
+      </div>
+
+      <p class="plain">Проще говоря: ROC-AUC 0.894 любой назовёт хорошей цифрой. В той же строке
+        аналитик переходит от двух дел на одну находку к полутора сотням. Отсюда наше правило:
+        <b>ROC-AUC без указанной доли мошенников рядом — цифра ни о чём</b>.</p>
+      <p class="caveat">Строка 0.1% стоит на тринадцати мошенниках, и разброс по сидам там шире
+        любой разницы, которую мы стали бы заявлять между двумя детекторами.</p>
+    </section>
+    {% endif %}
+
+    {# ══════════════ Р4 ══════════════ #}
+    {% if flow_weight.present %}
+    <section class="res" id="r4">
+      <header><span class="rid">Р4</span><h2>Параметр W: что он даёт по измерению</h2></header>
+      <p class="claim">Идея: пирамида и дропперская сеть — одно явление, снятое с разной выдержкой,
+        и разницу задаёт масштаб наблюдения. Идея проверена отдельным прогоном, результат
+        показан целиком, включая неудобную часть.</p>
+
+      <div class="cols">
+        <div>
+          <div class="formula">W(v) = <i>Σ</i> v<sub>k</sub> · e<sup>−λ·Δt<sub>k</sub></sup> ⁄ V<sub>in</sub>(v)</div>
+          <div class="slider">
+            <label for="lam">λ</label>
+            <input id="lam" type="range" min="5" max="300" value="50" step="1" aria-label="Коэффициент λ">
+            <span class="v" id="lamv">0.50</span>
+          </div>
+          <p class="caveat" id="wnote"></p>
+        </div>
+        <div class="scen">
+          <div class="srow"><div class="nm"><b>Обычный клиент</b>деньги лежат на счёте</div>
+            <div class="t"><i data-s="0" style="background:#2C6E52"></i></div>
+            <div class="v" data-v="0" style="color:#2C6E52">0.06</div></div>
+          <div class="srow"><div class="nm"><b>Пирамида</b>выплаты растянуты</div>
+            <div class="t"><i data-s="1" style="background:#B4741C"></i></div>
+            <div class="v" data-v="1" style="color:#B4741C">0.34</div></div>
+          <div class="srow"><div class="nm"><b>Дроппер</b>вывод за минуты</div>
+            <div class="t"><i data-s="2" style="background:#A8261F"></i></div>
+            <div class="v" data-v="2" style="color:#A8261F">0.94</div></div>
+          <p class="caveat">Три модельных набора транзакций, посчитанных по формуле в браузере.
+            Иллюстрация поведения функции, не измерение на данных.</p>
+        </div>
+      </div>
+
+      <div class="probe">
+        <div>
+          <div class="v" style="color:#B4741C">{{ '%.3f'|format(flow_weight.standalone.w_fast) }}</div>
+          <div class="k">AUC у W<sub>fast</sub> в одиночку</div>
+          <div class="n">Сам по себе признак слабый: 0.5 — это монетка.</div>
+        </div>
+        <div>
+          <div class="v">{{ '%.4f'|format(flow_weight.model.base) }} → {{ '%.4f'|format(flow_weight.model.enriched) }}</div>
+          <div class="k">AUC модели без W и с W</div>
+          <div class="n">Прирост <b style="color:#A8261F">{{ '%+.4f'|format(flow_weight.model.lift) }}</b>:
+            добавление W модель не улучшило.</div>
+        </div>
+        <div>
+          <div class="v" style="color:#2C6E52">{{ '%.4f'|format(flow_weight.importance.w_fast.mean) }}</div>
+          <div class="k">Перестановочная важность W<sub>fast</sub></div>
+          <div class="n">± {{ '%.4f'|format(flow_weight.importance.w_fast.error) }}, выше шумового пола.
+            Вклад есть, но крошечный.</div>
+        </div>
+      </div>
+
+      <p class="plain">Почему прирост нулевой: базовый набор уже содержит <b>out_in_ratio</b>
+        (отношение «ушло/пришло») и <b>median_hold_hours_inverse</b> (время удержания), а W собран
+        ровно из этих двух величин. Лес комбинирует их сам. Измерение говорит не «W бесполезен»,
+        а «W избыточен к признакам, из которых состоит».</p>
+      <p class="caveat">Где W ещё может окупиться: на счетах короче десяти событий, которые сейчас
+        выбрасываются (для W хватает одной сопоставленной посылки, для медианы — нет),
+        и на групповом уровне, где его вообще не проверяли.
+        Вердикт файла: «{{ flow_weight.verdict }}»
+        <span class="src">{{ flow_weight_meta.source }}</span></p>
+    </section>
+    {% endif %}
+
+    {# ══════════════ Р5 ══════════════ #}
+    {% if features %}
+    <section class="res" id="r5">
+      <header><span class="rid">Р5</span><h2>Ни один признак не тянет решение в одиночку</h2></header>
+      <p class="claim">Девять признаков считает детектор, а не генератор: это следствие одного
+        из дефектов, найденных у себя. Разброс вклада — в два с половиной раза, а не в двадцать.</p>
+      <div class="cols">
+        <div class="bars">
+          {% set top = features[0][1] %}
+          {% for name, value in features %}
+          <div class="bar">
+            <span class="n">{{ name }}</span>
+            <span class="t"><i style="width:{{ '%.1f'|format(value / top * 100) }}%"></i></span>
+            <span class="v">{{ '%.3f'|format(value) }}</span>
+          </div>
+          {% endfor %}
+          <p class="caveat" style="margin-top:9px">Источник: {{ features_meta.source }}</p>
+        </div>
+        <div>
+          <h3 style="font-size:13px;margin-bottom:8px">Три ветви и мета-модель</h3>
+          <p class="claim" style="margin-top:0">Табличная ветвь смотрит на историю клиента,
+            последовательностная читает транзакции как временной ряд, графовая берёт топологию
+            окрестности. Наверху ответы сводит логистическая мета-модель, изотоническая калибровка
+            превращает баллы в вероятности, а PSI на каждом батче ловит смену тактики.</p>
+          <p class="plain">Проще говоря: три модели голосуют, четвёртая решает, кого слушать
+            в этом конкретном случае.</p>
+          <h3 style="font-size:13px;margin:16px 0 8px">Порог выбран на прошлом</h3>
+          <p class="claim" style="margin-top:0">Purged walk-forward: обучение всегда на прошлом,
+            тест на следующем отрезке, между ними зазор. Порог выбирается на прошлых отрезках
+            и применяется к последнему, которого модель не видела.</p>
+          <p class="plain">Проще говоря: нельзя дать модели посмотреть завтрашние ответы,
+            а потом хвалиться, что она угадала сегодняшние.</p>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ══════════════ Р6 ══════════════ #}
+    <section class="res" id="r6">
+      <header><span class="rid">Р6</span><h2>Пять типологий и их структурные подписи</h2></header>
+      <p class="claim">Схема каждой типологии из <code>domain/typologies.py</code>. Это рисунок
+        формы, а не снимок данных: он объясняет, что именно ищет графовый уровень.</p>
+      <div class="topo">
+        <div class="topo-bar" role="group" aria-label="Типология">
+          <button data-t="LEGAL_LAYERING" aria-pressed="true">LAYERING</button>
+          <button data-t="LEGAL_TO_CRYPTO_BRIDGE" aria-pressed="false">CRYPTO BRIDGE</button>
+          <button data-t="CRYPTO_MIXING" aria-pressed="false">MIXING</button>
+          <button data-t="STRUCTURED_SPLITTING" aria-pressed="false">SPLITTING</button>
+          <button data-t="CASH_OUT" aria-pressed="false">CASH OUT</button>
+        </div>
+        <canvas id="topo" aria-label="Схема выбранной типологии"></canvas>
+        <div class="topo-foot">
+          <span id="tcap"></span>
+          <span class="mono"><b id="tn">0</b> узлов · <b id="te">0</b> рёбер</span>
+        </div>
+      </div>
+    </section>
+
+    {# ══════════════ Р7 ══════════════ #}
+    {% if queue.present %}
+    <section class="res" id="r7">
+      <header><span class="rid">Р7</span><h2>Мир, на котором всё это считалось</h2></header>
+      <p class="claim">Прогон конвейера целиком, пресет «{{ queue.preset }}»,
+        {{ '%.1f'|format(queue.seconds) }} секунды на этой машине.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th class="l">Что в мире</th><th>Сколько</th></tr></thead>
+          <tbody>
+            <tr><td class="l">Счетов всего</td><td>{{ queue.world.accounts|int }}</td></tr>
+            <tr><td class="l">Из них личных</td><td>{{ queue.world.personal_accounts|int }}</td></tr>
+            <tr><td class="l">Событий</td><td>{{ queue.world.events|int }}</td></tr>
+            <tr><td class="l">Мошеннических счетов</td><td>{{ queue.world.fraud_accounts|int }}</td></tr>
+            <tr><td class="l">Сетей</td><td>{{ queue.world.networks|int }}</td></tr>
+            <tr><td class="l">Терминалов</td><td>{{ queue.world.terminals|int }}</td></tr>
+            <tr class="hl"><td class="l">Доля мошенников среди личных</td>
+              <td>{{ '%.1f'|format(queue.world.fraud_share_of_personal * 100) }}%</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="2">Источник: {{ queue_meta.source }}</td></tr></tfoot>
+        </table>
+      </div>
+      <p class="caveat">Доля мошенников здесь <b>{{ '%.1f'|format(queue.world.fraud_share_of_personal * 100) }}%</b>,
+        а в жизни доли процента. Что это меняет, измерено в Р3, и без этой оговорки
+        цифры отсюда не произносятся.</p>
+    </section>
+    {% endif %}
+
+    <footer>
+      Страница собирается из <code>artifacts/*.json</code> при каждом запросе.
+      Развёрнутые формулировки, включая то, чего каждый результат <b>не</b> доказывает,
+      лежат в <code>docs/RESULTS.md</code>. Детектор <b>{{ worlds_meta.detector }}</b>,
+      прогон <b>{{ worlds_meta.generated_at }}</b>.
+    </footer>
+
+  </main>
+</div>
+
+<script src="{{ url_for('web_static', path='console.js') }}"></script>
+</body>
+</html>
