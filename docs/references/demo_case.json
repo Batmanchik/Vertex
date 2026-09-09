@@ -1,0 +1,5 @@
+{"case_id":"demo-1","window_hours":24,"events":[
+ {"event_id":"e1","ts":"2026-03-01T10:00:00Z","amount":480000,"currency":"KZT","sender_id":"acc_victim","receiver_id":"acc_mule","sender_type":"individual","receiver_type":"individual","channel":"legal","jurisdiction":"KZ","asset_type":"fiat"},
+ {"event_id":"e2","ts":"2026-03-01T10:04:00Z","amount":160000,"currency":"KZT","sender_id":"acc_mule","receiver_id":"acc_mule2","sender_type":"individual","receiver_type":"individual","channel":"legal","jurisdiction":"KZ","asset_type":"fiat"},
+ {"event_id":"e3","ts":"2026-03-01T10:06:00Z","amount":150000,"currency":"KZT","sender_id":"acc_mule","receiver_id":"acc_mule3","sender_type":"individual","receiver_type":"individual","channel":"legal","jurisdiction":"KZ","asset_type":"fiat"},
+ {"event_id":"e4","ts":"2026-03-01T10:09:00Z","amount":165000,"currency":"KZT","sender_id":"acc_mule","receiver_id":"atm_01","sender_type":"individual","receiver_type":"atm","channel":"legal","jurisdiction":"KZ","asset_type":"cash"}]}

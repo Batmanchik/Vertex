@@ -1,8 +1,11 @@
 """Run E1/E2 — the detector ladder crossed with the unit of analysis.
 
     python scripts/run_experiment_ladder.py            # default world, 10 seeds
+    python scripts/run_experiment_ladder.py --seeds 1 --days 30 --out /tmp/demo.json
 
-Writes artifacts/experiment_ladder.json and prints the table.
+Writes artifacts/experiment_ladder.json and prints the table. Pass ``--out``
+to write somewhere else: a small demo run is not the published measurement,
+and overwriting the artifact would change every number the site reads.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ import time
 import statistics
 import math
 from collections import defaultdict
+from pathlib import Path
 
 from apris.cheops.infrastructure.experiments.ladder import run_ladder, write_report
 from apris.cheops.infrastructure.simulation.config import SimulationConfig
@@ -28,6 +32,12 @@ def main() -> int:
     parser.add_argument("--family-circles", type=int, default=70)
     parser.add_argument("--employers", type=int, default=25)
     parser.add_argument("--terminals", type=int, default=60)
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Where to write the report. Defaults to artifacts/experiment_ladder.json.",
+    )
     args = parser.parse_args()
 
     started = time.time()
@@ -63,7 +73,8 @@ def main() -> int:
                 metrics_per_cell[key]["average_precision"].append(cell.average_precision)
 
     if last_report:
-        write_report(last_report)
+        written = write_report(last_report, args.out) if args.out else write_report(last_report)
+        print(f"report written to {written}")
 
     header = (
         f"{'scope':<20}{'model':<10}{'rows':>7}{'pos':>6}{'base':>8}"
