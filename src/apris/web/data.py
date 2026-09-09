@@ -79,6 +79,14 @@ class WorldRow:
     network_auc: float | None
     account_coverage: float | None
     seeds: int
+    auc_min: float | None = None
+    auc_max: float | None = None
+    accounts: float = 0.0
+    personal: float = 0.0
+    events: float = 0.0
+    fraud_accounts: float = 0.0
+    networks: float = 0.0
+    fraud_share: float = 0.0
 
 
 def worlds() -> tuple[list[WorldRow], RunMeta]:
@@ -88,7 +96,9 @@ def worlds() -> tuple[list[WorldRow], RunMeta]:
         return [], meta
 
     buckets: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    worlds_raw: dict[str, list[dict[str, Any]]] = {}
     for entry in raw.get("results", []):
+        worlds_raw.setdefault(entry["key"], []).append(entry.get("world", {}))
         for unit in entry.get("units", []):
             buckets.setdefault((entry["key"], unit["unit"]), []).append(unit)
 
@@ -96,14 +106,25 @@ def worlds() -> tuple[list[WorldRow], RunMeta]:
     for key in sorted({k for k, _ in buckets}):
         acc = buckets.get((key, "account"), [])
         net = buckets.get((key, "network"), [])
+        aucs = [u["roc_auc"] for u in acc if u["roc_auc"] is not None]
+        comp = worlds_raw.get(key, [{}])
+        pick = lambda name: _mean([float(w.get(name, 0.0)) for w in comp]) or 0.0
         rows.append(
             WorldRow(
                 key=key,
                 note=WORLD_TITLES_RU.get(key, ""),
-                account_auc=_mean([u["roc_auc"] for u in acc]),
+                account_auc=_mean(aucs),
                 network_auc=_mean([u["roc_auc"] for u in net]),
                 account_coverage=_mean([u["coverage"] for u in acc]),
                 seeds=len(acc),
+                auc_min=min(aucs) if aucs else None,
+                auc_max=max(aucs) if aucs else None,
+                accounts=pick("accounts"),
+                personal=pick("personal_accounts"),
+                events=pick("events"),
+                fraud_accounts=pick("fraud_accounts"),
+                networks=pick("networks"),
+                fraud_share=pick("fraud_share_of_personal"),
             )
         )
     return rows, meta
@@ -291,6 +312,181 @@ def queue() -> tuple[Queue, RunMeta]:
     )
 
 
+
+# ──────────────────────────────────────────────────────────────────────
+# Сравнение моделей: четыре алгоритма на трёх уровнях анализа
+# ──────────────────────────────────────────────────────────────────────
+MODEL_NAMES_RU = {
+    "rules": "Правила",
+    "logistic": "Логистическая",
+    "forest": "Лес",
+    "boosting": "Бустинг",
+}
+SCOPE_NAMES_RU = {
+    "account": "по счетам",
+    "network_pooled": "по группам, признаки счетов",
+    "network_structural": "по группам, структура",
+}
+
+
+@dataclass
+class Cell:
+    scope: str
+    scope_ru: str
+    model: str
+    model_ru: str
+    roc_auc: float
+    average_precision: float
+    rows: int
+    positives: int
+    base_rate: float
+    folds: int
+    monotonic: bool
+
+
+@dataclass
+class ModelMatrix:
+    cells: list[Cell] = field(default_factory=list)
+    scopes: list[str] = field(default_factory=list)
+    models: list[str] = field(default_factory=list)
+    world: dict[str, float] = field(default_factory=dict)
+    account_unit: dict[str, float] = field(default_factory=dict)
+    discovery: dict[str, float] = field(default_factory=dict)
+    seed: int = 0
+    present: bool = False
+
+    def at(self, scope: str, model: str) -> Cell | None:
+        for cell in self.cells:
+            if cell.scope == scope and cell.model == model:
+                return cell
+        return None
+
+
+def model_matrix() -> tuple[ModelMatrix, RunMeta]:
+    raw = _load("experiment_ladder.json")
+    meta = RunMeta(source="artifacts/experiment_ladder.json")
+    if not raw:
+        return ModelMatrix(), meta
+
+    cells = [
+        Cell(
+            scope=c["scope"],
+            scope_ru=SCOPE_NAMES_RU.get(c["scope"], c["scope"]),
+            model=c["model"],
+            model_ru=MODEL_NAMES_RU.get(c["model"], c["model"]),
+            roc_auc=float(c["roc_auc"]),
+            average_precision=float(c["average_precision"]),
+            rows=int(c["rows"]),
+            positives=int(c["positives"]),
+            base_rate=float(c["base_rate"]),
+            folds=int(c["folds"]),
+            monotonic=str(c.get("ladder", "")).startswith("monotonic"),
+        )
+        for c in raw.get("cells", [])
+    ]
+    scopes, models = [], []
+    for c in cells:
+        if c.scope not in scopes:
+            scopes.append(c.scope)
+        if c.model not in models:
+            models.append(c.model)
+    return (
+        ModelMatrix(
+            cells=cells,
+            scopes=scopes,
+            models=models,
+            world=raw.get("world", {}),
+            account_unit=raw.get("account_unit", {}),
+            discovery=raw.get("discovery", {}),
+            seed=int(raw.get("seed", 0)),
+            present=bool(cells),
+        ),
+        meta,
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Очередь аналитика: настоящие дела
+# ──────────────────────────────────────────────────────────────────────
+@dataclass
+class Block:
+    unit: str
+    rows: int
+    positives: int
+    prevalence: float
+    caught: int
+    queued: int
+    precision: float
+    recall: float
+    threshold: float
+    ceiling: float
+    items: list[dict[str, Any]] = field(default_factory=list)
+
+
+def blocks() -> tuple[list[Block], RunMeta]:
+    raw = _load("analyst_queue.json")
+    meta = _meta(raw, "artifacts/analyst_queue.json")
+    if not raw:
+        return [], meta
+    out = []
+    for o in raw.get("outcomes", []):
+        items = sorted(o.get("items", []), key=lambda i: i.get("rank", 0))
+        out.append(
+            Block(
+                unit=o.get("unit", ""),
+                rows=int(o.get("block_rows", 0)),
+                positives=int(o.get("block_positives", 0)),
+                prevalence=float(o.get("block_prevalence", 0.0)),
+                caught=int(o.get("caught", 0)),
+                queued=int(o.get("queued", 0)),
+                precision=float(o.get("precision", 0.0)),
+                recall=float(o.get("recall", 0.0)),
+                threshold=float(o.get("threshold", 0.0)),
+                ceiling=float(o.get("unit_ceiling", 0.0)),
+                items=items,
+            )
+        )
+    return out, meta
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Рабочие точки: цена каждой следующей доли пойманных
+# ──────────────────────────────────────────────────────────────────────
+@dataclass
+class Point:
+    prevalence: float
+    alerts_per_1000: float
+    precision: float
+    recall: float
+    reviews_per_catch: float
+
+
+def operating_points() -> tuple[list[Point], RunMeta]:
+    raw = _load("prevalence_sweep.json")
+    meta = _meta(raw, "artifacts/prevalence_sweep.json")
+    if not raw:
+        return [], meta
+
+    groups: dict[int, list[dict[str, Any]]] = {}
+    for run in raw.get("natural", []):
+        for i, p in enumerate(run.get("operating_points", [])):
+            groups.setdefault(i, []).append(p)
+
+    return (
+        [
+            Point(
+                prevalence=_mean([p["prevalence"] for p in ps]) or 0.0,
+                alerts_per_1000=_mean([p["alerts_per_1000_accounts"] for p in ps]) or 0.0,
+                precision=_mean([p["precision"] for p in ps]) or 0.0,
+                recall=_mean([p["recall"] for p in ps]) or 0.0,
+                reviews_per_catch=_mean([p["reviews_per_catch"] for p in ps]) or 0.0,
+            )
+            for _, ps in sorted(groups.items())
+        ],
+        meta,
+    )
+
+
 def snapshot() -> dict[str, Any]:
     """Всё сразу — то, что рендерит витрина."""
     world_rows, world_meta = worlds()
@@ -299,7 +495,13 @@ def snapshot() -> dict[str, Any]:
     fw, fw_meta = flow_weight()
     feats, feat_meta = features()
     q, q_meta = queue()
+    mm, mm_meta = model_matrix()
+    bl, bl_meta = blocks()
+    op, op_meta = operating_points()
     return {
+        "matrix": mm, "matrix_meta": mm_meta,
+        "blocks": bl, "blocks_meta": bl_meta,
+        "points": op, "points_meta": op_meta,
         "worlds": world_rows,
         "worlds_meta": world_meta,
         "evasion": evasion_rows,

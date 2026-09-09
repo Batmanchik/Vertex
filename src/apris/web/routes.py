@@ -34,6 +34,8 @@ def results_page(request: Request) -> HTMLResponse:
         context["wc"] = charts.worlds_chart(worlds)
     if snap["evasion"]:
         context["ec"] = charts.evasion_chart(snap["evasion"])
+    if snap["matrix"].present:
+        context["mg"] = charts.matrix_grid(snap["matrix"])
     if rarity:
         context["rc1"] = charts.rarity_chart(rarity, "roc_auc", lo=0.85, hi=1.0)
         context["rc2"] = charts.rarity_chart(rarity, "precision_at_budget", lo=0.0, hi=0.6)

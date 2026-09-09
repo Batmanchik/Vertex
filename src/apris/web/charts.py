@@ -49,7 +49,18 @@ def worlds_chart(rows, *, width=506, height=150, pad_left=46, pad_top=12):
     net = [(i, r.network_auc) for i, r in enumerate(rows) if r.network_auc is not None]
 
     missing = [i for i, r in enumerate(rows) if r.network_auc is None]
+    # Полоса разброса по сидам: честнее одной средней точки.
+    band = [
+        {
+            "x": round(x(i), 1),
+            "top": round(y(r.auc_max), 1),
+            "bottom": round(y(r.auc_min), 1),
+        }
+        for i, r in enumerate(rows)
+        if r.auc_min is not None and r.auc_max is not None
+    ]
     return {
+        "band": band,
         "account": _series(acct, x, y),
         "network": _series(net, x, y),
         "ticks_y": [(f"{g:.3f}".rstrip("0").rstrip("."), round(y(g), 1))
@@ -104,4 +115,44 @@ def rarity_chart(rows, key, *, lo, hi, width=270, height=110, pad_left=44, pad_t
         "width": width,
         "height": height,
         "pad_left": pad_left,
+    }
+
+
+def matrix_grid(matrix, *, cell_w=118, cell_h=40, label_w=176, head_h=30):
+    """Сетка «модель × уровень» с заливкой по ROC-AUC."""
+    lo, hi = 0.70, 1.0
+
+    def shade(value: float) -> float:
+        return max(0.0, min(1.0, (value - lo) / (hi - lo)))
+
+    cells = []
+    for r, scope in enumerate(matrix.scopes):
+        for c, model in enumerate(matrix.models):
+            cell = matrix.at(scope, model)
+            if cell is None:
+                continue
+            cells.append({
+                "x": label_w + c * cell_w,
+                "y": head_h + r * cell_h,
+                "w": cell_w,
+                "h": cell_h,
+                "alpha": round(0.08 + 0.62 * shade(cell.roc_auc), 3),
+                "auc": cell.roc_auc,
+                "ap": cell.average_precision,
+                "best": False,
+                "cell": cell,
+            })
+    if cells:
+        top = max(cells, key=lambda d: d["auc"])
+        top["best"] = True
+    return {
+        "cells": cells,
+        "cols": [(matrix.models[c], label_w + c * cell_w + cell_w // 2)
+                 for c in range(len(matrix.models))],
+        "rows": [(matrix.scopes[r], head_h + r * cell_h + cell_h // 2)
+                 for r in range(len(matrix.scopes))],
+        "width": label_w + len(matrix.models) * cell_w,
+        "height": head_h + len(matrix.scopes) * cell_h,
+        "label_w": label_w,
+        "head_h": head_h,
     }

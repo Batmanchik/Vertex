@@ -164,6 +164,27 @@ footer{border-top:1px solid var(--rule);margin-top:8px;padding:20px 0 60px;
 footer b{color:var(--ink-2);font-weight:600}
 footer code{font-family:var(--mono);font-size:11px;background:#E7EBEF;padding:1px 4px}
 
+
+/* ── формулы ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule-soft);
+  border:1px solid var(--rule);margin-top:16px}
+.fitem{background:var(--sheet);padding:15px 17px 13px}
+.fitem.wide{grid-column:1 / -1}
+.fx{font-family:var(--mono);font-size:13px;color:var(--ink);padding-bottom:9px;
+  border-bottom:1px solid var(--rule-soft);margin-bottom:9px;overflow-x:auto}
+.fd{font-size:11.5px;color:var(--ink-2);line-height:1.55}
+.fd b{color:var(--ink)}
+.fitem .src{display:block;margin-top:8px;color:var(--ink-3)}
+
+/* ── очередь ── */
+.bstat{border:1px solid var(--rule);background:var(--sheet);padding:14px 16px}
+.bhead{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:11px}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.bgrid > div{display:flex;flex-direction:column;gap:3px}
+.bgrid b{font-size:16px;font-weight:500;line-height:1;color:var(--ink)}
+.bgrid span{font-size:10.5px;color:var(--ink-3)}
+@media (max-width:980px){.fgrid{grid-template-columns:1fr}}
+
 a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 @media (max-width:980px){
