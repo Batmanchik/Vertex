@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import numpy as np
 import pandas as pd
 
 from apris.data_generator import FEATURE_BOUNDS, RISK_THRESHOLDS
@@ -175,6 +176,55 @@ def explain(
         reverse=True,
     )[:top_k]
     return [{"feature": name, "importance": float(score)} for name, score in ranked]
+
+
+def contributions(
+    features_dict: dict[str, Any],
+    model: Any | None = None,
+    feature_names: list[str] | None = None,
+) -> dict[str, Any] | None:
+    """Вклад каждого признака в оценку ИМЕННО этого объекта.
+
+    ``explain`` возвращает важность модели в целом: она одинакова для любого
+    входа и на вопрос «почему заблокировали этот счёт» не отвечает. Здесь
+    считается другое — значения Шепли для деревьев (TreeSHAP), точные, а не
+    приближённые. Считает их сам LightGBM через ``pred_contrib``, поэтому
+    отдельная библиотека не нужна.
+
+    Вклады в лог-шансах, и они складываются: сумма всех вкладов плюс базовое
+    значение даёт логит предсказания. Возвращается ``None``, если модель
+    такого не умеет.
+    """
+    if model is None or feature_names is None:
+        model, feature_names = load_artifacts()
+
+    input_df = _validate_inputs(features_dict, feature_names)
+    try:
+        raw = model.predict(input_df, pred_contrib=True)
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+    values = np.asarray(raw)[0]
+    if len(values) != len(feature_names) + 1:
+        return None
+
+    base = float(values[-1])
+    items = [
+        {
+            "feature": name,
+            "value": float(input_df.iloc[0][name]),
+            "contribution": float(values[index]),
+        }
+        for index, name in enumerate(feature_names)
+    ]
+    items.sort(key=lambda item: abs(item["contribution"]), reverse=True)
+    logit = base + sum(item["contribution"] for item in items)
+    return {
+        "base_value": base,
+        "logit": logit,
+        "probability": float(1.0 / (1.0 + math.exp(-logit))),
+        "items": items,
+    }
 
 
 def main() -> None:

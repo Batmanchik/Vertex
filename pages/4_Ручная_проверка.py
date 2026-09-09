@@ -27,11 +27,19 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
 from apris.cheops.infrastructure.ml.legacy_features_v2 import legacy_features
-from apris.data_generator import FEATURE_BOUNDS, FEATURE_COLUMNS, RISK_THRESHOLDS
+from apris.data_generator import (
+    FEATURE_BOUNDS,
+    FEATURE_COLUMNS,
+    RISK_THRESHOLDS,
+    generate_legitimate,
+    generate_pyramid,
+)
+from apris.risk_engine import contributions
 from apris.frontend import api_client
 from apris.frontend.session import current_state
 from apris.population_map import (
@@ -90,13 +98,42 @@ DEFAULT_OPERATIONAL: dict[str, float] = {
     "max_referral_depth": 8.0,
 }
 
+PRESETS = {
+    "Легальный бизнес": ("legit", "#2C6E52"),
+    "Пограничный случай": ("borderline", "#B4741C"),
+    "Пирамида": ("pyramid", "#A8261F"),
+    "Случайный объект": ("random", "#4C596A"),
+}
+
+
+def _preset_features(kind: str, seed: int) -> dict[str, float]:
+    """Один объект из того же генератора, на котором училась модель.
+
+    Пресеты не выдуманы руками. ``legit`` и ``pyramid`` берутся из своих
+    распределений, ``borderline`` из доли, которую генератор специально
+    сдвигает к чужому классу, ``random`` из смеси. Отсюда и оговорка на
+    экране: это проверка поведения модели на знакомом ей входе, а не
+    независимое измерение качества.
+    """
+    rng = np.random.default_rng(seed)
+    if kind == "random":
+        kind = "pyramid" if rng.random() < 0.5 else "legit"
+    share = 1.0 if kind == "borderline" else 0.0
+    maker = generate_legitimate if kind == "legit" else generate_pyramid
+    if kind == "borderline":
+        maker = generate_pyramid if rng.random() < 0.5 else generate_legitimate
+    frame = maker(1, seed=int(rng.integers(0, 10**6)), borderline_share=share)
+    row = frame.iloc[0]
+    return {name: float(row[name]) for name in FEATURE_COLUMNS}
+
+
 st.title("🔍 Ручная проверка объекта")
 st.caption("Девять признаков исходной модели. Оценку возвращает API, интерфейс её не считает.")
 
 st.warning(
     f"**Пороги {RISK_THRESHOLDS['medium']:.2f} / {RISK_THRESHOLDS['high']:.2f} "
     "не откалиброваны.** Вероятность приходит из "
-    "`predict_proba` случайного леса, а он не калиброван: измеренный на "
+    "`predict_proba` LightGBM, а он не калиброван: измеренный на "
     "независимом потоке событий, этот же классификатор давал безупречный "
     "порядок при вероятностях около 0.50 — то есть ранжировал идеально и не "
     "срабатывал ни разу. Число ниже стоит читать как место в очереди, а не как "
@@ -117,6 +154,28 @@ for name, value in DEFAULT_OPERATIONAL.items():
     st.session_state.setdefault(f"op_{name}", float(value))
 for name in FEATURE_COLUMNS:
     st.session_state.setdefault(f"ft_{name}", float(FEATURE_BOUNDS[name][0]))
+
+# ── Пресеты ───────────────────────────────────────────────────────
+st.markdown("**Готовые объекты**")
+preset_cols = st.columns(len(PRESETS))
+for column, (title, (kind, _colour)) in zip(preset_cols, PRESETS.items()):
+    if column.button(title, use_container_width=True, key=f"preset_{kind}"):
+        seed = int(st.session_state.get("preset_counter", 0)) + hash(kind) % 10_000
+        st.session_state["preset_counter"] = seed + 1
+        for name, value in _preset_features(kind, seed).items():
+            st.session_state[f"ft_{name}"] = value
+        st.session_state["input_mode"] = "Признаки модели"
+        st.session_state["preset_applied"] = title
+        st.session_state.pop("manual_result", None)
+        st.rerun()
+
+if "preset_applied" in st.session_state:
+    st.caption(
+        f"Загружен объект: **{st.session_state['preset_applied']}**. Значения взяты "
+        "из того же генератора, на котором училась модель, поэтому это проверка "
+        "поведения на знакомом входе, а не измерение качества. Кнопку можно жать "
+        "несколько раз: каждый раз приходит новый объект того же класса."
+    )
 
 with st.expander("Взять признаки из построенного мира", expanded=False):
     if st.checkbox("Загрузить мир и показать организаторов пирамид", value=False):
@@ -220,8 +279,11 @@ if st.button("Оценить объект", type="primary", use_container_width=
                 "что вызывает API."
             )
         st.session_state["manual_result"] = result
-        st.session_state["manual_explain"] = api_client.explain_features(features, top_k=5)
+        st.session_state["manual_explain"] = api_client.explain_features(features, top_k=9)
         st.session_state["manual_features"] = dict(features)
+        # Вклады считаются локально: сервис такой ручки не отдаёт, а без них
+        # экран отвечает на вопрос «что важно вообще» вместо «почему этот».
+        st.session_state["manual_contributions"] = contributions(features)
         st.session_state.pop("manual_error", None)
     except Exception as exc:
         st.session_state["manual_error"] = str(exc)
@@ -245,20 +307,58 @@ if "manual_result" in st.session_state and "manual_error" not in st.session_stat
         f"{RISK_THRESHOLDS['medium']:.2f} / {RISK_THRESHOLDS['high']:.2f}",
     )
 
-    st.markdown("**Глобальная важность признаков по модели**")
-    st.caption(
-        "Это важность модели в целом, а не вклад именно этого объекта. "
-        "Джини несёт около трети всех решений и при расчёте по реальным потокам "
-        "не даёт сигнала вовсе, а payout_dependency — буквальное определение "
-        "схемы Понци — почти выключен и оказывается одним из сильнейших."
-    )
-    st.dataframe(
-        pd.DataFrame(st.session_state["manual_explain"]).rename(
-            columns={"feature": "Признак", "importance": "Важность"}
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
+    breakdown = st.session_state.get("manual_contributions")
+    if breakdown:
+        st.markdown("**Почему получилось именно это число**")
+        st.caption(
+            "Вклад каждого признака в оценку этого объекта, значения Шепли для "
+            "деревьев (TreeSHAP). Считает сам LightGBM, приближения здесь нет. "
+            "Вклады в лог-шансах и складываются: база "
+            f"{breakdown['base_value']:+.2f} плюс сумма вкладов даёт "
+            f"{breakdown['logit']:+.2f}, что и есть вероятность "
+            f"{breakdown['probability']:.3f}. Плюс толкает к «мошенник», минус к «честный»."
+        )
+        table = pd.DataFrame(
+            [
+                {
+                    "Признак": FEATURE_LABELS.get(item["feature"], item["feature"]),
+                    "Значение": round(item["value"], 3),
+                    "Вклад": round(item["contribution"], 3),
+                    "Куда тянет": "к мошеннику" if item["contribution"] > 0 else "к честному",
+                }
+                for item in breakdown["items"]
+            ]
+        )
+        st.dataframe(
+            table,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Вклад": st.column_config.NumberColumn(format="%+.3f"),
+            },
+        )
+        st.bar_chart(
+            table.set_index("Признак")["Вклад"],
+            horizontal=True,
+            color="#1B5B66",
+            use_container_width=True,
+        )
+
+    with st.expander("Важность признаков по модели в целом", expanded=False):
+        st.caption(
+            "Это ранжирование одинаково для любого входа и на вопрос «почему "
+            "этот объект» не отвечает. Держим его рядом ради одного наблюдения: "
+            "Джини несёт около трети всех решений и при расчёте по реальным "
+            "потокам не даёт сигнала вовсе, а payout_dependency, буквальное "
+            "определение схемы Понци, почти выключен."
+        )
+        st.dataframe(
+            pd.DataFrame(st.session_state["manual_explain"]).rename(
+                columns={"feature": "Признак", "importance": "Важность"}
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
 
     st.markdown("#### 🗺️ Карта рисков популяции")
     try:
@@ -278,6 +378,36 @@ if "manual_result" in st.session_state and "manual_error" not in st.session_stat
             "Проекция PCA синтетической популяции с наложением текущего объекта. "
             "Популяция взята из обучающего датасета старой модели."
         )
+
+        # Точка за пределами облака означает, что модель экстраполирует: такого
+        # сочетания признаков в обучении не было, и оценке верить нельзя.
+        cloud = np.asarray(projected)
+        here = np.asarray(point).ravel()
+        outside = [
+            axis
+            for axis in (0, 1)
+            if here[axis] < cloud[:, axis].min() or here[axis] > cloud[:, axis].max()
+        ]
+        pinned = [
+            FEATURE_LABELS.get(name, name)
+            for name, value in scored_features.items()
+            if abs(value - FEATURE_BOUNDS[name][0]) < 1e-9
+            or abs(value - FEATURE_BOUNDS[name][1]) < 1e-9
+        ]
+        if outside:
+            st.warning(
+                "**Объект вне обучающей популяции.** Точка вышла за облако по "
+                f"{'обеим осям' if len(outside) == 2 else 'одной оси'}: такого сочетания "
+                "признаков модель не видела и сейчас экстраполирует. Оценка выше "
+                "формально посчитана, но опираться на неё нельзя."
+            )
+        if pinned:
+            st.info(
+                "Признаки, упёршиеся в границу допустимого диапазона: "
+                + ", ".join(pinned)
+                + ". Дальше двигать соответствующие поля бесполезно, значение "
+                "обрезается и оценка перестаёт меняться."
+            )
     except Exception as exc:
         st.warning(f"Карта популяции недоступна: {exc}")
 else:
