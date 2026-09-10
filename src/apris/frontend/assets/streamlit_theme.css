@@ -1,36 +1,84 @@
+/* Тема интерфейса Vertex.
+   Одна система с витриной измерений: та же палитра, те же гарнитуры,
+   те же правила. Плотный отчёт об измерении, а не витрина продукта.
+   Палитра совпадает с src/apris/web/static/console.css. */
+
 :root {
-    --apris-bg: #ffffff;
-    --apris-surface: #f7f7f8;
-    --apris-border: #e5e5e5;
-    --apris-border-hover: #cdcdcd;
-    --apris-text: #1a1a1a;
-    --apris-text-secondary: #6e6e80;
-    --apris-accent: #10a37f;
-    --apris-accent-hover: #0d8a6a;
-    --apris-accent-light: rgba(16, 163, 127, 0.08);
-    --apris-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --apris-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --apris-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
-    --apris-radius: 12px;
-    --apris-radius-lg: 16px;
+    --vx-paper: #F2F4F6;
+    --vx-sheet: #FFFFFF;
+    --vx-ink: #131A24;
+    --vx-ink-2: #4C596A;
+    --vx-ink-3: #778394;
+    --vx-rule: #D8DEE5;
+    --vx-rule-soft: #E7EBEF;
+    --vx-accent: #1B5B66;
+    --vx-accent-2: #7FBCC4;
+    --vx-accent-soft: #E4EDEE;
+    --vx-fraud: #A8261F;
+    --vx-fraud-soft: #F6E7E6;
+    --vx-exit: #B4741C;
+    --vx-exit-soft: #F8EFE2;
+    --vx-ok: #2C6E52;
+    --vx-ok-soft: #E6F0EA;
+    --vx-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+    --vx-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
 }
 
+/* ── основа ───────────────────────────────────────────────── */
 html, body, .stApp {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    color: var(--apris-text) !important;
+    font-family: var(--vx-sans) !important;
+    color: var(--vx-ink) !important;
     -webkit-font-smoothing: antialiased;
 }
 
-.stApp { background: var(--apris-bg) !important; }
+.stApp { background: var(--vx-paper) !important; }
+
+/* Полоса содержимого: читаемая ширина вместо растянутой на весь монитор. */
+.block-container {
+    max-width: 1240px !important;
+    padding-top: 1.4rem !important;
+    padding-bottom: 4rem !important;
+}
 
 .stApp p, .stApp li, .stApp label,
 [data-testid="stMarkdownContainer"], [data-testid="stCaptionContainer"],
 .stMarkdown, .stCaption {
-    color: var(--apris-text) !important;
-    font-family: 'Inter', -apple-system, sans-serif !important;
+    color: var(--vx-ink) !important;
+    font-family: var(--vx-sans) !important;
 }
 
-/* Keep Streamlit Material icons rendered as icons, not ligature text. */
+.stApp p, .stApp li, .stApp label {
+    font-weight: 400 !important;
+    line-height: 1.55 !important;
+    font-size: 0.875rem !important;
+}
+
+.stApp h1 {
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+    font-size: 1.5rem !important;
+    color: var(--vx-ink) !important;
+}
+.stApp h2 { font-weight: 600 !important; font-size: 1.125rem !important; }
+.stApp h3, .stApp h4 { font-weight: 600 !important; font-size: 0.95rem !important; }
+
+.stCaption, [data-testid="stCaptionContainer"] {
+    color: var(--vx-ink-3) !important;
+    font-size: 0.78rem !important;
+}
+
+.stApp code, .stApp kbd {
+    font-family: var(--vx-mono) !important;
+    font-size: 0.8rem !important;
+    background: var(--vx-rule-soft) !important;
+    color: var(--vx-ink) !important;
+    padding: 1px 5px !important;
+    border-radius: 2px !important;
+}
+
+.stApp a { color: var(--vx-accent) !important; }
+
+/* Иконки Streamlit остаются иконками, а не текстом лигатуры. */
 .material-symbols-rounded,
 .material-symbols-outlined,
 .material-icons,
@@ -49,198 +97,265 @@ html, body, .stApp {
     -webkit-font-smoothing: antialiased;
 }
 
-.stApp p, .stApp li, .stApp label {
-    font-weight: 400 !important;
-    line-height: 1.6 !important;
-    font-size: 0.925rem !important;
-}
-
-.stApp h1 { font-weight: 700 !important; letter-spacing: -0.02em !important; font-size: 1.75rem !important; }
-.stApp h2 { font-weight: 600 !important; letter-spacing: -0.01em !important; font-size: 1.25rem !important; }
-.stApp h3, .stApp h4 { font-weight: 600 !important; }
-.stCaption, [data-testid="stCaptionContainer"] { color: var(--apris-text-secondary) !important; }
-
+/* ── верхняя панель и боковое меню ────────────────────────── */
 header[data-testid="stHeader"] {
-    background: var(--apris-bg) !important;
-    border-bottom: 1px solid var(--apris-border) !important;
+    background: var(--vx-paper) !important;
+    border-bottom: 1px solid var(--vx-rule) !important;
 }
 
 [data-testid="stToolbar"] { display: none; }
 
+[data-testid="stSidebar"] {
+    background: var(--vx-ink) !important;
+    border-right: 3px solid var(--vx-accent) !important;
+}
+
+[data-testid="stSidebar"] * { color: #E7EBEF !important; }
+
+[data-testid="stSidebarNav"] a {
+    border-radius: 0 !important;
+    padding: 5px 12px !important;
+    border-left: 2px solid transparent !important;
+}
+[data-testid="stSidebarNav"] a:hover {
+    background: rgba(127, 188, 196, 0.10) !important;
+    border-left-color: var(--vx-accent-2) !important;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+    background: rgba(127, 188, 196, 0.16) !important;
+    border-left-color: var(--vx-accent-2) !important;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] span { color: #FFFFFF !important; }
+[data-testid="stSidebarNav"] span { font-size: 0.84rem !important; }
+
+/* ── кнопки: прямоугольные, без теней ─────────────────────── */
 div.stButton > button, div.stFormSubmitButton > button {
-    background: var(--apris-bg) !important;
-    color: var(--apris-text) !important;
-    border: 1px solid var(--apris-border) !important;
-    border-radius: 20px !important;
-    font-family: 'Inter', sans-serif !important;
+    background: var(--vx-sheet) !important;
+    color: var(--vx-ink-2) !important;
+    border: 1px solid var(--vx-rule) !important;
+    border-radius: 2px !important;
+    font-family: var(--vx-sans) !important;
     font-weight: 500 !important;
-    font-size: 0.875rem !important;
-    min-height: 40px !important;
-    padding: 6px 20px !important;
-    transition: all 0.15s ease !important;
-    box-shadow: var(--apris-shadow-sm) !important;
+    font-size: 0.82rem !important;
+    min-height: 34px !important;
+    padding: 5px 14px !important;
+    box-shadow: none !important;
+    transition: background .12s ease, border-color .12s ease, color .12s ease !important;
 }
 
 div.stButton > button:hover, div.stFormSubmitButton > button:hover {
-    border-color: var(--apris-border-hover) !important;
-    background: var(--apris-surface) !important;
-    box-shadow: var(--apris-shadow-md) !important;
+    border-color: var(--vx-accent) !important;
+    color: var(--vx-accent) !important;
+    background: var(--vx-accent-soft) !important;
 }
 
 div[data-testid="stFormSubmitButton"] button[kind="primary"],
 div.stButton > button[kind="primary"] {
-    background: var(--apris-accent) !important;
-    color: #ffffff !important;
-    border: 1px solid var(--apris-accent) !important;
+    background: var(--vx-accent) !important;
+    color: #FFFFFF !important;
+    border: 1px solid var(--vx-accent) !important;
     font-weight: 600 !important;
 }
 
 div[data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
 div.stButton > button[kind="primary"]:hover {
-    background: var(--apris-accent-hover) !important;
-    box-shadow: 0 2px 12px rgba(16, 163, 127, 0.25) !important;
+    background: #14464F !important;
+    border-color: #14464F !important;
+    color: #FFFFFF !important;
 }
 
+/* ── метрики: карточка с цветной кромкой слева ────────────── */
 [data-testid="stMetric"] {
-    background: var(--apris-bg) !important;
-    border: 1px solid var(--apris-border) !important;
-    border-radius: var(--apris-radius) !important;
-    padding: 12px 14px !important;
-    box-shadow: var(--apris-shadow-sm) !important;
-    transition: box-shadow 0.15s ease;
+    background: var(--vx-sheet) !important;
+    border: 1px solid var(--vx-rule) !important;
+    border-left: 3px solid var(--vx-accent) !important;
+    border-radius: 0 !important;
+    padding: 11px 14px !important;
+    box-shadow: none !important;
 }
 
-[data-testid="stMetric"]:hover { box-shadow: var(--apris-shadow-md) !important; }
 [data-testid="stMetricLabel"] {
-    color: var(--apris-text-secondary) !important;
-    font-size: 0.8rem !important;
+    color: var(--vx-ink-3) !important;
+    font-size: 0.7rem !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.04em !important;
+    letter-spacing: 0.07em !important;
+    font-weight: 600 !important;
 }
-[data-testid="stMetricValue"] { color: var(--apris-text) !important; font-weight: 700 !important; }
+[data-testid="stMetricValue"] {
+    color: var(--vx-ink) !important;
+    font-family: var(--vx-mono) !important;
+    font-weight: 500 !important;
+    font-variant-numeric: tabular-nums !important;
+    font-size: 1.5rem !important;
+}
+[data-testid="stMetricDelta"] { font-family: var(--vx-mono) !important; }
 [data-testid="stMetric"] * { text-shadow: none !important; }
 
+/* ── вкладки ──────────────────────────────────────────────── */
 [data-baseweb="tab-list"] {
     gap: 0 !important;
-    border-bottom: 1px solid var(--apris-border) !important;
+    border-bottom: 1px solid var(--vx-rule) !important;
 }
 
 [data-baseweb="tab-list"] button {
-    font-family: 'Inter', sans-serif !important;
+    font-family: var(--vx-sans) !important;
     font-weight: 500 !important;
-    font-size: 0.9rem !important;
-    color: var(--apris-text-secondary) !important;
+    font-size: 0.84rem !important;
+    color: var(--vx-ink-3) !important;
     border-bottom: 2px solid transparent !important;
-    padding: 10px 20px !important;
-    transition: all 0.15s ease !important;
+    padding: 8px 16px !important;
     background: transparent !important;
 }
 
-[data-baseweb="tab-list"] button:hover { color: var(--apris-text) !important; }
+[data-baseweb="tab-list"] button:hover { color: var(--vx-ink) !important; }
 [data-baseweb="tab-list"] button[aria-selected="true"] {
-    color: var(--apris-accent) !important;
-    border-bottom-color: var(--apris-accent) !important;
+    color: var(--vx-accent) !important;
+    border-bottom-color: var(--vx-accent) !important;
     font-weight: 600 !important;
 }
-[data-baseweb="tab-highlight"] { background-color: var(--apris-accent) !important; }
+[data-baseweb="tab-highlight"] { background-color: var(--vx-accent) !important; }
 
+/* ── таблицы и поля ───────────────────────────────────────── */
 [data-testid="stDataFrame"], [data-testid="stTable"] {
-    border: 1px solid var(--apris-border) !important;
-    border-radius: var(--apris-radius) !important;
+    border: 1px solid var(--vx-rule) !important;
+    border-radius: 0 !important;
     overflow: hidden !important;
 }
+[data-testid="stDataFrame"] * { font-family: var(--vx-mono) !important; }
 
-[data-baseweb="input"], [data-baseweb="base-input"] {
-    background: var(--apris-bg) !important;
-    border: 1px solid var(--apris-border) !important;
-    border-radius: 10px !important;
-    transition: border-color 0.15s ease !important;
+[data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="select"] {
+    background: var(--vx-sheet) !important;
+    border: 1px solid var(--vx-rule) !important;
+    border-radius: 2px !important;
 }
 
-[data-baseweb="input"]:focus-within {
-    border-color: var(--apris-accent) !important;
-    box-shadow: 0 0 0 3px var(--apris-accent-light) !important;
+[data-baseweb="input"]:focus-within, [data-baseweb="select"]:focus-within {
+    border-color: var(--vx-accent) !important;
+    box-shadow: 0 0 0 2px var(--vx-accent-soft) !important;
 }
 
-.apris-card {
-    background: var(--apris-surface);
-    border: 1px solid var(--apris-border);
-    border-radius: var(--apris-radius-lg);
-    padding: 20px 24px;
-    box-shadow: var(--apris-shadow-sm);
+[data-baseweb="input"] input, [data-testid="stNumberInput"] input {
+    font-family: var(--vx-mono) !important;
+    font-variant-numeric: tabular-nums !important;
 }
 
-.apris-hero {
-    text-align: center;
-    padding: 40px 24px 28px;
-    margin-bottom: 8px;
-}
+[data-testid="stSlider"] [role="slider"] { background: var(--vx-accent) !important; }
 
-.apris-hero h1 {
-    font-size: 2rem !important;
-    margin-bottom: 6px !important;
-    letter-spacing: -0.03em !important;
+/* ── шапка страницы ───────────────────────────────────────── */
+.vx-masthead {
+    background: var(--vx-ink);
+    border-bottom: 3px solid var(--vx-accent);
+    margin: -1.4rem -1rem 18px;
+    padding: 14px 26px;
 }
-
-.apris-hero .apris-subtitle {
-    color: var(--apris-text-secondary);
-    font-size: 1.05rem;
-    margin: 0;
-    font-weight: 400;
+.vx-masthead .vx-name {
+    color: #E7EBEF;
+    font-family: var(--vx-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: .01em;
+}
+.vx-masthead .vx-name b { color: var(--vx-accent-2); font-weight: 600; }
+.vx-masthead .vx-line {
+    color: #8FA0B3;
+    font-size: 0.8rem;
+    margin-top: 5px;
+    max-width: 78ch;
     line-height: 1.5;
 }
 
-.apris-hero .apris-badge {
-    display: inline-block;
-    background: var(--apris-accent-light);
-    color: var(--apris-accent);
-    font-weight: 600;
-    font-size: 0.75rem;
-    padding: 4px 14px;
-    border-radius: 20px;
-    margin-bottom: 14px;
-    letter-spacing: 0.04em;
+/* Полоса опорных чисел под шапкой. */
+.vx-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border: 1px solid var(--vx-rule);
+    background: var(--vx-sheet);
+    margin-bottom: 18px;
+}
+.vx-facts > div {
+    flex: 1 1 140px;
+    padding: 10px 14px;
+    border-right: 1px solid var(--vx-rule-soft);
+}
+.vx-facts > div:last-child { border-right: none; }
+.vx-facts .v {
+    font-family: var(--vx-mono);
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--vx-ink);
+    line-height: 1.1;
+}
+.vx-facts .k {
+    font-size: 0.7rem;
+    color: var(--vx-ink-3);
     text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 5px;
 }
 
+.vx-card {
+    background: var(--vx-sheet);
+    border: 1px solid var(--vx-rule);
+    padding: 14px 16px;
+}
+
+/* ── полосы риска ─────────────────────────────────────────── */
 .risk-banner {
-    border-radius: var(--apris-radius);
-    padding: 16px 20px;
+    border-radius: 0;
+    padding: 12px 16px;
     margin-bottom: 12px;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 10px;
+    border-left-width: 3px !important;
+    border-left-style: solid !important;
 }
 
-.risk-banner-low { background: #ecfdf5; color: #065f46 !important; border: 1px solid #a7f3d0; }
-.risk-banner-medium { background: #fffbeb; color: #92400e !important; border: 1px solid #fde68a; }
-.risk-banner-high { background: #fef2f2; color: #991b1b !important; border: 1px solid #fecaca; }
-
+.risk-banner-low {
+    background: var(--vx-ok-soft); color: var(--vx-ok) !important;
+    border: 1px solid var(--vx-rule); border-left-color: var(--vx-ok) !important;
+}
+.risk-banner-medium {
+    background: var(--vx-exit-soft); color: var(--vx-exit) !important;
+    border: 1px solid var(--vx-rule); border-left-color: var(--vx-exit) !important;
+}
+.risk-banner-high {
+    background: var(--vx-fraud-soft); color: var(--vx-fraud) !important;
+    border: 1px solid var(--vx-rule); border-left-color: var(--vx-fraud) !important;
+}
 .risk-banner-critical {
-    background: #450a0a;
-    color: #fecaca !important;
-    border: 1px solid #991b1b;
-    animation: pulse-critical 2s ease-in-out infinite;
+    background: var(--vx-ink); color: #F6E7E6 !important;
+    border: 1px solid var(--vx-fraud); border-left-color: var(--vx-fraud) !important;
 }
 
-@keyframes pulse-critical {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
-    50% { box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.15); }
-}
-
+/* ── уведомления и раскрывашки ────────────────────────────── */
 [data-testid="stAlert"] {
-    border-radius: var(--apris-radius) !important;
-    border: 1px solid var(--apris-border) !important;
+    border-radius: 0 !important;
+    border: 1px solid var(--vx-rule) !important;
+    border-left: 3px solid var(--vx-accent) !important;
+    background: var(--vx-accent-soft) !important;
 }
+[data-testid="stAlert"] p { font-size: 0.84rem !important; }
 
 [data-testid="stExpander"] {
-    border: 1px solid var(--apris-border) !important;
-    border-radius: var(--apris-radius) !important;
+    border: 1px solid var(--vx-rule) !important;
+    border-radius: 0 !important;
+    background: var(--vx-sheet) !important;
 }
+[data-testid="stExpander"] summary { font-weight: 600 !important; font-size: 0.87rem !important; }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+hr { border-color: var(--vx-rule) !important; }
+
+::-webkit-scrollbar { width: 7px; height: 7px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+::-webkit-scrollbar-thumb { background: var(--vx-rule); }
+::-webkit-scrollbar-thumb:hover { background: var(--vx-ink-3); }
+
+*:focus-visible { outline: 2px solid var(--vx-accent) !important; outline-offset: 2px !important; }
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+}

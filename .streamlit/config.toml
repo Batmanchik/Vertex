@@ -1,9 +1,12 @@
+# Палитра совпадает с src/apris/web/static/console.css и streamlit_theme.css:
+# интерфейс аналитика и витрина измерений — одна система, а не две.
 [theme]
 base = "light"
-primaryColor = "#10a37f"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f7f7f8"
-textColor = "#1a1a1a"
+primaryColor = "#1B5B66"
+backgroundColor = "#F2F4F6"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#131A24"
+font = "sans serif"
 
 [server]
 runOnSave = false

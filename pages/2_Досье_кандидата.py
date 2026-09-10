@@ -80,7 +80,12 @@ order = sorted(by_id, key=lambda cid: by_id[cid].size, reverse=True)
 selected_id = st.selectbox(
     "Кандидат",
     order,
-    format_func=lambda cid: f"{cid} — {by_id[cid].size} счетов, {len(by_id[cid].events)} событий",
+    # «40 счетов» читается как «сорок счетов одного человека», хотя кандидат —
+    # это группа счетов разных людей. Формулировка снимает вопрос заранее.
+    format_func=lambda cid: (
+        f"{cid} · {by_id[cid].size} счетов разных владельцев, "
+        f"{len(by_id[cid].events)} событий"
+    ),
 )
 candidate = by_id[selected_id]
 
