@@ -30,6 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 PAGES = [
     "app.py",
+    "pages/0_Измерения.py",
     "pages/1_Поиск_сетей.py",
     "pages/2_Досье_кандидата.py",
     "pages/3_Валидация.py",
