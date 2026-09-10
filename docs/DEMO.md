@@ -130,7 +130,7 @@ curl -s -X POST localhost:8000/api/v2/score \
 строку (вставка правой кнопкой мыши) и нажать Enter:
 
 ```powershell
-irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1 | iex
+irm https://raw.githubusercontent.com/Batmanchik/Vertex/main/scripts/setup.ps1 | iex
 ```
 
 Скрипт делает всё сам: проверяет git и Python, скачивает проект в
@@ -147,7 +147,7 @@ irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-rev
 внутренней или внешней командой». В `cmd` та же установка запускается так:
 
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1 | iex"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/Batmanchik/Vertex/main/scripts/setup.ps1 | iex"
 ```
 
 Отличить оболочки можно по началу строки: `C:\...>` это `cmd`, `PS C:\...>` это
@@ -195,10 +195,10 @@ Python встанет, но команды его не найдут. Скрип�
 
 ```powershell
 # положить проект в другую папку
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1))) -Path D:\Vertex
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Batmanchik/Vertex/main/scripts/setup.ps1))) -Path D:\Vertex
 
 # поставить, но не запускать
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1))) -SkipStart
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Batmanchik/Vertex/main/scripts/setup.ps1))) -SkipStart
 ```
 
 Когда проект уже скачан, проще запускать локальный файл:

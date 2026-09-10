@@ -12,7 +12,7 @@
 
     Run it straight from GitHub, no download step and no execution policy to change:
 
-        irm https://raw.githubusercontent.com/Batmanchik/Vertex/claude/documentation-review-improve-w17t1u/scripts/setup.ps1 | iex
+        irm https://raw.githubusercontent.com/Batmanchik/Vertex/main/scripts/setup.ps1 | iex
 
     Or, if the file is already on disk:
 
@@ -22,7 +22,7 @@
     Where to put the project. Defaults to Vertex in the user folder.
 
 .PARAMETER Branch
-    Branch to check out. Falls back to main when the branch is not on the remote.
+    Branch to check out. Defaults to main.
 
 .PARAMETER Port
     Port for the interface. Defaults to 8501, and one address carries
@@ -37,7 +37,7 @@
 [CmdletBinding()]
 param(
     [string]$Path = (Join-Path $env:USERPROFILE "Vertex"),
-    [string]$Branch = "claude/documentation-review-improve-w17t1u",
+    [string]$Branch = "main",
     [int]$Port = 8501,
     [switch]$WithApi,
     [switch]$SkipStart
