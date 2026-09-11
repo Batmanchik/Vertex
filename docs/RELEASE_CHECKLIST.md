@@ -1,4 +1,8 @@
-# Cheops AI Release Checklist (Baseline v1-compatible)
+# Vertex Release Checklist (Baseline v1-compatible)
+
+> **Что это:** что прогнать перед выпуском. Карта документов —
+> [../DOCS.md](../DOCS.md). Ручная проверка интерфейса — соседний файл
+> [MANUAL_REVIEW_CHECKLIST.md](MANUAL_REVIEW_CHECKLIST.md).
 
 ## Pre-release Quality Gates
 - `python -m ruff check src tests pages app.py`

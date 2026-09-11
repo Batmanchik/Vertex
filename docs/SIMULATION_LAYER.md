@@ -1,7 +1,13 @@
 # Simulation Layer (Layer 0)
 
 Date: 2026-09-04
-Status: implemented, accepted, covered by 21 tests.
+Status: implemented, accepted, covered by 21 tests. The crypto channel was
+added afterwards (task 3.8); amount structuring is still not generated (task
+3.10), so four of five typologies fire.
+
+> Reference for how the generator works. What it produced when measured is in
+> [RESULTS.md](RESULTS.md); the gap to the target system is in
+> [TARGET_STATE.md](TARGET_STATE.md).
 
 ## 1. What it is
 

@@ -1,13 +1,37 @@
 # Vertex (Multi-Channel Fraud Intelligence System)
 
 > **Lost in the documents?** [DOCS.md](DOCS.md) is the map: what each file is
-> for, who keeps it, and where to write a new thing. The three that matter:
-> this README (how to run it), [PLAN.md](PLAN.md) (what is being built and in
-> what order), [docs/RESULTS.md](docs/RESULTS.md) (every measurement, with what
-> it does not prove).
+> for, who keeps it, and where to write a new thing. The four that matter:
+> [docs/TARGET_STATE.md](docs/TARGET_STATE.md) (the target the project is
+> moving towards, and the gap to it), [PLAN.md](PLAN.md) (what is being built
+> and in what order), [docs/RESULTS.md](docs/RESULTS.md) (every measurement,
+> with what it does not prove), and this README (how to run it).
 
 Vertex is a local MVP for detection of multi-channel financial fraud patterns (legal + crypto).
 It combines ML risk scoring, ETL for transaction logs, a FastAPI backend, and a Streamlit multipage frontend.
+
+## Where the project stands
+
+Four facts a new session needs before reading anything else. The full gap
+analysis is [docs/TARGET_STATE.md](docs/TARGET_STATE.md).
+
+- **Every measured number in this repository comes from a random forest**
+  (`ml/case_pipeline.py`), not from the three-branch LightGBM ensemble. The
+  ensemble's code exists; two of its three branches currently run heuristic
+  proxies and say so in `branch_modes`. Retraining them is task 4.2, and it
+  will move every number in `docs/RESULTS.md`.
+- **No run against real labelled data has happened.** The Elliptic adapter and
+  its tests are in the repo, the data is not. The one transfer test that was
+  run came back negative (`graph_relay_share`, AUC 0.515) and is reported as a
+  result rather than buried.
+- **The `W` parameter is implemented and measured, but not wired in.** Its
+  measured lift was −0.0022, below the shuffled control, so the project's own
+  rule kept it out of the feature set.
+- **Four of five typologies are generated.** Amount structuring is task 3.10.
+
+None of this is a defect list. It is the difference between the system as
+described in the research paper (the target) and the system as it runs today,
+and closing it is what `PLAN.md` §8 orders.
 
 ## Current Architecture
 - `src/apris/` - core backend and ML modules.

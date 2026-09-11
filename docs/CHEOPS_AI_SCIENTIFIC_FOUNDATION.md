@@ -1,7 +1,15 @@
-# Cheops AI: Scientific Foundation (v1)
+# Vertex (Cheops AI): Scientific Foundation (v1)
 
-Date: 2026-03-21  
-Status: Working scientific section for judges, reviewers, and technical audit.
+Date: 2026-03-21 (written under the project's former name)
+Status: the formal reference — notation, the event contract, branch and
+calibration formulas.
+
+> **Read this as the specification, not as a report on what runs today.** It
+> describes the target architecture, including the LightGBM branch family; two
+> of the three branches currently run heuristic proxies. Where this document
+> and the running system disagree, [TARGET_STATE.md](TARGET_STATE.md) says
+> which gap it is and which task closes it, and [RESULTS.md](RESULTS.md) says
+> what was actually measured and on which detector.
 
 ## 1. Purpose
 This document formalizes the current Cheops AI methodology:

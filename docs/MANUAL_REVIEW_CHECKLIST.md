@@ -1,4 +1,7 @@
-# Cheops AI Manual Review Checklist
+# Vertex Manual Review Checklist
+
+> **Что это:** ручная проверка того, что не ловится автоматическими гейтами.
+> Карта документов — [../DOCS.md](../DOCS.md).
 
 Используется для критичных модулей: `domain`, `risk scoring`, `etl`, `api contracts`.
 

@@ -4,6 +4,13 @@ Date: 2026-09-04
 Target: third round, end of October 2026.
 Author works solo.
 
+> **Scope of this file:** the scientific argument — hypotheses, method, what
+> counts as proof. It stays valid. The numbers quoted inside it are from
+> 2026-09-04 and were recomputed after the crypto channel appeared: take
+> figures from [RESULTS.md](RESULTS.md), not from here. The order of work is in
+> [../PLAN.md](../PLAN.md) §8, and the gap to the target paper in
+> [TARGET_STATE.md](TARGET_STATE.md).
+
 ## 1. What the work claims
 
 Not "we detect money mules" — they are already detected, and the contents of
