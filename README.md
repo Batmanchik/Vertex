@@ -1,11 +1,12 @@
 # Vertex (Multi-Channel Fraud Intelligence System)
 
-> **Lost in the documents?** [DOCS.md](DOCS.md) is the map: what each file is
-> for, who keeps it, and where to write a new thing. The four that matter:
-> [docs/TARGET_STATE.md](docs/TARGET_STATE.md) (the target the project is
-> moving towards, and the gap to it), [PLAN.md](PLAN.md) (what is being built
-> and in what order), [docs/RESULTS.md](docs/RESULTS.md) (every measurement,
-> with what it does not prove), and this README (how to run it).
+> **Three documents, and that is the whole set.** [PLAN.md](PLAN.md) — the
+> target, the gap to it, the queue of work and the rules agents work by;
+> [docs/RESULTS.md](docs/RESULTS.md) — every measurement, with what it does not
+> prove; this README — how to run the thing. Everything else is reference:
+> [docs/DEFENCE.md](docs/DEFENCE.md), [docs/METHOD.md](docs/METHOD.md),
+> [docs/CHECKLISTS.md](docs/CHECKLISTS.md), `docs/reviews/`, `docs/work/`, and
+> `docs/archive/`, which must not be quoted.
 
 Vertex is a local MVP for detection of multi-channel financial fraud patterns (legal + crypto).
 It combines ML risk scoring, ETL for transaction logs, a FastAPI backend, and a Streamlit multipage frontend.
@@ -13,7 +14,7 @@ It combines ML risk scoring, ETL for transaction logs, a FastAPI backend, and a 
 ## Where the project stands
 
 Four facts a new session needs before reading anything else. The full gap
-analysis is [docs/TARGET_STATE.md](docs/TARGET_STATE.md).
+analysis is [PLAN.md](PLAN.md) §2.
 
 - **Every measured number in this repository comes from a random forest**
   (`ml/case_pipeline.py`), not from the three-branch LightGBM ensemble. The
@@ -272,9 +273,9 @@ report = evaluate(world)                      # layer-0 acceptance criterion
 cases = build_cases(world)                    # labelled cases for detectors
 ```
 
-Details: [docs/SIMULATION_LAYER.md](docs/SIMULATION_LAYER.md).
+Details: [docs/METHOD.md](docs/METHOD.md), part III.
 Measured findings: [docs/reviews/AUDIT_FINDINGS_2026-09-04.md](docs/reviews/AUDIT_FINDINGS_2026-09-04.md).
-Plan: [docs/RESEARCH_PLAN_RKNP_2026.md](docs/RESEARCH_PLAN_RKNP_2026.md).
+Plan: [PLAN.md](PLAN.md).
 
 ## Test and Quality Workflow
 
@@ -343,5 +344,5 @@ Operational observability:
 - `/api/v2/health/runtime` returns aggregated runtime counters and per-endpoint latency/error snapshots.
 
 ## Release Readiness
-- Regression and operational release checklist: `docs/RELEASE_CHECKLIST.md`.
-- Scientific methodology and formulas: `docs/CHEOPS_AI_SCIENTIFIC_FOUNDATION.md`.
+- Regression and operational release checklist: [docs/CHECKLISTS.md](docs/CHECKLISTS.md).
+- Scientific methodology and formulas: [docs/METHOD.md](docs/METHOD.md).

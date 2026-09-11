@@ -1,7 +1,50 @@
-# Vertex Manual Review Checklist
+# Проверки: перед выпуском и при ручном ревью
 
-> **Что это:** ручная проверка того, что не ловится автоматическими гейтами.
-> Карта документов — [../DOCS.md](../DOCS.md).
+> **Что это:** два списка проверок в одном файле. Первый прогоняется перед
+> выпуском, второй — руками, для того, что не ловится гейтами.
+> План работ — [../PLAN.md](../PLAN.md).
+
+---
+
+# I. Перед выпуском
+
+## Pre-release Quality Gates
+- `python -m ruff check src tests pages app.py`
+- `python -m mypy`
+- `python -m pytest --cov=src/apris`
+- `python -m bandit -q -r src/apris -x src/apris/crypto_ponzi -s B101`
+- `python -m radon cc src/apris/cheops -s -n B`
+- `lint-imports`
+
+## Runtime Smoke
+- `scripts/app.ps1 start`
+- `scripts/app.ps1 status`
+- `scripts/app.ps1 open`
+- `scripts/app.ps1 stop`
+- `scripts/app.ps1 status`
+
+## Container Smoke
+- `docker compose up -d --build`
+- `docker compose ps`
+- `curl http://127.0.0.1:8000/api/v1/health`
+- `curl http://127.0.0.1:8501/_stcore/health`
+- `docker compose down -v`
+
+## User Scenario Smoke
+- Scanner batch run (synthetic mode)
+- Scanner API-down path shows actionable message and retry button
+- Dashboard opens and displays risk rows
+- Manual check page scores a case and renders explanation
+- API endpoints healthy: `/api/v1/health`, `/api/v2/health/model`, `/api/v2/health/runtime`
+
+## Regression Notes
+- v1 endpoints must remain available without payload/response breaking changes.
+- UI scanner must use API batch path (`/api/v2/score/batch`) and must not call model inference directly.
+- `CHEOPS_API_BASE_URL` and `CHEOPS_API_TIMEOUT` must be honored by frontend API client.
+
+---
+
+# II. Ручное ревью
 
 Используется для критичных модулей: `domain`, `risk scoring`, `etl`, `api contracts`.
 
@@ -34,4 +77,3 @@
 - Health-check и error-pathы покрыты тестами.
 - Ключевые операции имеют структурируемые логи.
 - Для деградаций задана стратегия (retry/fallback/abort) и она протестирована.
-

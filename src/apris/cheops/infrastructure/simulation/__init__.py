@@ -2,7 +2,7 @@
 
 Produces raw ``TransactionEvent`` streams only. No engineered features are
 written by the generator: every feature must be derived by the detection
-layers from the events themselves. See docs/SIMULATION_LAYER.md.
+layers from the events themselves. See docs/METHOD.md, part III.
 """
 
 from apris.cheops.infrastructure.simulation.config import (
