@@ -1,0 +1,655 @@
+{
+  "task": "4.11 case panel",
+  "cadence_days": 7,
+  "worlds": [
+    {
+      "seed": 42,
+      "rows": 3400,
+      "cases": 154,
+      "dates": 25,
+      "fraud_share": 0.1668,
+      "fraud_share_by_date": {
+        "min": 0.1545,
+        "max": 0.1897
+      },
+      "time_forward": {
+        "prevalence": {
+          "folds": 4,
+          "per_fold": [
+            0.1724,
+            0.1667,
+            0.1597,
+            0.1597
+          ],
+          "min": 0.1597,
+          "max": 0.1724,
+          "ratio_max_to_min": 1.08
+        },
+        "forest": {
+          "pooled_roc_auc": 0.9953,
+          "pooled_pr_auc": 0.9811,
+          "rows_scored": 2797,
+          "positives": 460,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 603,
+              "test": 667,
+              "prevalence": 0.1724,
+              "shared_case_share": 0.9745,
+              "roc_auc": 0.9784
+            },
+            {
+              "fold": 1,
+              "train": 1270,
+              "test": 690,
+              "prevalence": 0.1667,
+              "shared_case_share": 0.9783,
+              "roc_auc": 0.9954
+            },
+            {
+              "fold": 2,
+              "train": 1960,
+              "test": 720,
+              "prevalence": 0.1597,
+              "shared_case_share": 0.9861,
+              "roc_auc": 0.9989
+            },
+            {
+              "fold": 3,
+              "train": 2680,
+              "test": 720,
+              "prevalence": 0.1597,
+              "shared_case_share": 1.0,
+              "roc_auc": 1.0
+            }
+          ]
+        },
+        "lightgbm": {
+          "pooled_roc_auc": 0.9963,
+          "pooled_pr_auc": 0.983,
+          "rows_scored": 2797,
+          "positives": 460,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 603,
+              "test": 667,
+              "prevalence": 0.1724,
+              "shared_case_share": 0.9745,
+              "roc_auc": 0.9739
+            },
+            {
+              "fold": 1,
+              "train": 1270,
+              "test": 690,
+              "prevalence": 0.1667,
+              "shared_case_share": 0.9783,
+              "roc_auc": 0.9977
+            },
+            {
+              "fold": 2,
+              "train": 1960,
+              "test": 720,
+              "prevalence": 0.1597,
+              "shared_case_share": 0.9861,
+              "roc_auc": 0.9997
+            },
+            {
+              "fold": 3,
+              "train": 2680,
+              "test": 720,
+              "prevalence": 0.1597,
+              "shared_case_share": 1.0,
+              "roc_auc": 1.0
+            }
+          ]
+        }
+      },
+      "case_holdout": {
+        "prevalence": {
+          "folds": 5,
+          "per_fold": [
+            0.1398,
+            0.0742,
+            0.1814,
+            0.2486,
+            0.1893
+          ],
+          "min": 0.0742,
+          "max": 0.2486,
+          "ratio_max_to_min": 3.35
+        },
+        "forest": {
+          "pooled_roc_auc": 0.9391,
+          "pooled_pr_auc": 0.8275,
+          "rows_scored": 3400,
+          "positives": 567,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 2692,
+              "test": 708,
+              "prevalence": 0.1398,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9835
+            },
+            {
+              "fold": 1,
+              "train": 2726,
+              "test": 674,
+              "prevalence": 0.0742,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9419
+            },
+            {
+              "fold": 2,
+              "train": 2733,
+              "test": 667,
+              "prevalence": 0.1814,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9707
+            },
+            {
+              "fold": 3,
+              "train": 2704,
+              "test": 696,
+              "prevalence": 0.2486,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.8992
+            },
+            {
+              "fold": 4,
+              "train": 2745,
+              "test": 655,
+              "prevalence": 0.1893,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9131
+            }
+          ]
+        },
+        "lightgbm": {
+          "pooled_roc_auc": 0.9491,
+          "pooled_pr_auc": 0.8415,
+          "rows_scored": 3400,
+          "positives": 567,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 2692,
+              "test": 708,
+              "prevalence": 0.1398,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9811
+            },
+            {
+              "fold": 1,
+              "train": 2726,
+              "test": 674,
+              "prevalence": 0.0742,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9422
+            },
+            {
+              "fold": 2,
+              "train": 2733,
+              "test": 667,
+              "prevalence": 0.1814,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9647
+            },
+            {
+              "fold": 3,
+              "train": 2704,
+              "test": 696,
+              "prevalence": 0.2486,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9152
+            },
+            {
+              "fold": 4,
+              "train": 2745,
+              "test": 655,
+              "prevalence": 0.1893,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9594
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "rows": 2989,
+      "cases": 130,
+      "dates": 26,
+      "fraud_share": 0.174,
+      "fraud_share_by_date": {
+        "min": 0.1667,
+        "max": 0.2198
+      },
+      "time_forward": {
+        "prevalence": {
+          "folds": 4,
+          "per_fold": [
+            0.1751,
+            0.1675,
+            0.1667,
+            0.1667
+          ],
+          "min": 0.1667,
+          "max": 0.1751,
+          "ratio_max_to_min": 1.05
+        },
+        "forest": {
+          "pooled_roc_auc": 0.9962,
+          "pooled_pr_auc": 0.9845,
+          "rows_scored": 2368,
+          "positives": 400,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 501,
+              "test": 571,
+              "prevalence": 0.1751,
+              "shared_case_share": 0.9282,
+              "roc_auc": 0.9761
+            },
+            {
+              "fold": 1,
+              "train": 1072,
+              "test": 597,
+              "prevalence": 0.1675,
+              "shared_case_share": 0.9883,
+              "roc_auc": 0.9978
+            },
+            {
+              "fold": 2,
+              "train": 1669,
+              "test": 600,
+              "prevalence": 0.1667,
+              "shared_case_share": 1.0,
+              "roc_auc": 0.9993
+            },
+            {
+              "fold": 3,
+              "train": 2269,
+              "test": 600,
+              "prevalence": 0.1667,
+              "shared_case_share": 1.0,
+              "roc_auc": 1.0
+            }
+          ]
+        },
+        "lightgbm": {
+          "pooled_roc_auc": 0.9944,
+          "pooled_pr_auc": 0.9784,
+          "rows_scored": 2368,
+          "positives": 400,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 501,
+              "test": 571,
+              "prevalence": 0.1751,
+              "shared_case_share": 0.9282,
+              "roc_auc": 0.9741
+            },
+            {
+              "fold": 1,
+              "train": 1072,
+              "test": 597,
+              "prevalence": 0.1675,
+              "shared_case_share": 0.9883,
+              "roc_auc": 0.9951
+            },
+            {
+              "fold": 2,
+              "train": 1669,
+              "test": 600,
+              "prevalence": 0.1667,
+              "shared_case_share": 1.0,
+              "roc_auc": 0.9991
+            },
+            {
+              "fold": 3,
+              "train": 2269,
+              "test": 600,
+              "prevalence": 0.1667,
+              "shared_case_share": 1.0,
+              "roc_auc": 1.0
+            }
+          ]
+        }
+      },
+      "case_holdout": {
+        "prevalence": {
+          "folds": 5,
+          "per_fold": [
+            0.1739,
+            0.3049,
+            0.0884,
+            0.1327,
+            0.1683
+          ],
+          "min": 0.0884,
+          "max": 0.3049,
+          "ratio_max_to_min": 3.45
+        },
+        "forest": {
+          "pooled_roc_auc": 0.9438,
+          "pooled_pr_auc": 0.7993,
+          "rows_scored": 2989,
+          "positives": 520,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 2391,
+              "test": 598,
+              "prevalence": 0.1739,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.8746
+            },
+            {
+              "fold": 1,
+              "train": 2392,
+              "test": 597,
+              "prevalence": 0.3049,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9891
+            },
+            {
+              "fold": 2,
+              "train": 2401,
+              "test": 588,
+              "prevalence": 0.0884,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.994
+            },
+            {
+              "fold": 3,
+              "train": 2401,
+              "test": 588,
+              "prevalence": 0.1327,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9521
+            },
+            {
+              "fold": 4,
+              "train": 2371,
+              "test": 618,
+              "prevalence": 0.1683,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9541
+            }
+          ]
+        },
+        "lightgbm": {
+          "pooled_roc_auc": 0.9488,
+          "pooled_pr_auc": 0.8122,
+          "rows_scored": 2989,
+          "positives": 520,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 2391,
+              "test": 598,
+              "prevalence": 0.1739,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9241
+            },
+            {
+              "fold": 1,
+              "train": 2392,
+              "test": 597,
+              "prevalence": 0.3049,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9829
+            },
+            {
+              "fold": 2,
+              "train": 2401,
+              "test": 588,
+              "prevalence": 0.0884,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.985
+            },
+            {
+              "fold": 3,
+              "train": 2401,
+              "test": 588,
+              "prevalence": 0.1327,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9195
+            },
+            {
+              "fold": 4,
+              "train": 2371,
+              "test": 618,
+              "prevalence": 0.1683,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9692
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "rows": 2315,
+      "cases": 117,
+      "dates": 24,
+      "fraud_share": 0.165,
+      "fraud_share_by_date": {
+        "min": 0.1584,
+        "max": 0.1928
+      },
+      "time_forward": {
+        "prevalence": {
+          "folds": 4,
+          "per_fold": [
+            0.1711,
+            0.1633,
+            0.1592,
+            0.1584
+          ],
+          "min": 0.1584,
+          "max": 0.1711,
+          "ratio_max_to_min": 1.08
+        },
+        "forest": {
+          "pooled_roc_auc": 0.999,
+          "pooled_pr_auc": 0.9948,
+          "rows_scored": 1572,
+          "positives": 256,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 339,
+              "test": 374,
+              "prevalence": 0.1711,
+              "shared_case_share": 0.9733,
+              "roc_auc": 0.9999
+            },
+            {
+              "fold": 1,
+              "train": 713,
+              "test": 392,
+              "prevalence": 0.1633,
+              "shared_case_share": 0.9694,
+              "roc_auc": 0.9972
+            },
+            {
+              "fold": 2,
+              "train": 1105,
+              "test": 402,
+              "prevalence": 0.1592,
+              "shared_case_share": 0.9851,
+              "roc_auc": 0.9995
+            },
+            {
+              "fold": 3,
+              "train": 1507,
+              "test": 404,
+              "prevalence": 0.1584,
+              "shared_case_share": 1.0,
+              "roc_auc": 1.0
+            }
+          ]
+        },
+        "lightgbm": {
+          "pooled_roc_auc": 0.9992,
+          "pooled_pr_auc": 0.9959,
+          "rows_scored": 1572,
+          "positives": 256,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 339,
+              "test": 374,
+              "prevalence": 0.1711,
+              "shared_case_share": 0.9733,
+              "roc_auc": 0.9984
+            },
+            {
+              "fold": 1,
+              "train": 713,
+              "test": 392,
+              "prevalence": 0.1633,
+              "shared_case_share": 0.9694,
+              "roc_auc": 0.9991
+            },
+            {
+              "fold": 2,
+              "train": 1105,
+              "test": 402,
+              "prevalence": 0.1592,
+              "shared_case_share": 0.9851,
+              "roc_auc": 0.9993
+            },
+            {
+              "fold": 3,
+              "train": 1507,
+              "test": 404,
+              "prevalence": 0.1584,
+              "shared_case_share": 1.0,
+              "roc_auc": 1.0
+            }
+          ]
+        }
+      },
+      "case_holdout": {
+        "prevalence": {
+          "folds": 5,
+          "per_fold": [
+            0.0976,
+            0.211,
+            0.2127,
+            0.2092,
+            0.1028
+          ],
+          "min": 0.0976,
+          "max": 0.2127,
+          "ratio_max_to_min": 2.18
+        },
+        "forest": {
+          "pooled_roc_auc": 0.9679,
+          "pooled_pr_auc": 0.8377,
+          "rows_scored": 2315,
+          "positives": 382,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 1823,
+              "test": 492,
+              "prevalence": 0.0976,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9905
+            },
+            {
+              "fold": 1,
+              "train": 1860,
+              "test": 455,
+              "prevalence": 0.211,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.951
+            },
+            {
+              "fold": 2,
+              "train": 1873,
+              "test": 442,
+              "prevalence": 0.2127,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9372
+            },
+            {
+              "fold": 3,
+              "train": 1856,
+              "test": 459,
+              "prevalence": 0.2092,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.98
+            },
+            {
+              "fold": 4,
+              "train": 1848,
+              "test": 467,
+              "prevalence": 0.1028,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9984
+            }
+          ]
+        },
+        "lightgbm": {
+          "pooled_roc_auc": 0.9567,
+          "pooled_pr_auc": 0.77,
+          "rows_scored": 2315,
+          "positives": 382,
+          "folds": [
+            {
+              "fold": 0,
+              "train": 1823,
+              "test": 492,
+              "prevalence": 0.0976,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.985
+            },
+            {
+              "fold": 1,
+              "train": 1860,
+              "test": 455,
+              "prevalence": 0.211,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9417
+            },
+            {
+              "fold": 2,
+              "train": 1873,
+              "test": 442,
+              "prevalence": 0.2127,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9275
+            },
+            {
+              "fold": 3,
+              "train": 1856,
+              "test": 459,
+              "prevalence": 0.2092,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9916
+            },
+            {
+              "fold": 4,
+              "train": 1848,
+              "test": 467,
+              "prevalence": 0.1028,
+              "shared_case_share": 0.0,
+              "roc_auc": 0.9863
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "runtime_seconds": 192.3
+}
