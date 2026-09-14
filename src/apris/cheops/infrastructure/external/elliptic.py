@@ -57,6 +57,7 @@ DEFAULT_DATA_DIR = Path("data") / "elliptic"
 EDGE_FILE = "elliptic_txs_edgelist.csv"
 CLASS_FILE = "elliptic_txs_classes.csv"
 FEATURE_FILE = "elliptic_txs_features.csv"
+TIMESTEP_FILE = "elliptic_txs_timesteps.csv"  # two columns cached from the above
 
 # Labels in the raw file: "1" illicit, "2" licit, "unknown" unlabelled.
 LABEL_ILLICIT = "1"
@@ -124,6 +125,47 @@ def download_if_missing(data_dir: Path = DEFAULT_DATA_DIR, *, with_features: boo
             archive.extractall(data_dir)
 
 
+def ensure_time_steps(data_dir: Path = DEFAULT_DATA_DIR) -> dict[str, int]:
+    """Node -> time step, without keeping 690 MB on disk.
+
+    The time step is the second column of the feature file; the other 165 are
+    anonymised values nothing here reads. Downloading the archive and
+    extracting it costs 690 MB for two columns, so the rows are streamed out
+    of the zip in memory and the pair is cached as a small CSV. The cache is
+    what later runs read, and the big file is never written.
+
+    An already-extracted feature file is used if one happens to be there.
+    """
+    data_dir.mkdir(parents=True, exist_ok=True)
+    cache = data_dir / TIMESTEP_FILE
+    if cache.exists():
+        return _read_time_steps(cache)
+
+    extracted = data_dir / FEATURE_FILE
+    if extracted.exists():
+        steps = _read_time_steps(extracted)
+    else:
+        payload = _fetch_https(f"{PYG_MIRROR}/{FEATURE_FILE}.zip")
+        steps = {}
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            with archive.open(FEATURE_FILE) as handle:
+                for line in io.TextIOWrapper(handle, encoding="utf-8", newline=""):
+                    head = line.split(",", 2)
+                    if len(head) < 2:
+                        continue
+                    try:
+                        steps[head[0]] = int(float(head[1]))
+                    except ValueError:
+                        continue  # header row
+
+    with open(cache, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["txId", "time_step"])
+        for node, step in steps.items():
+            writer.writerow([node, step])
+    return steps
+
+
 def _read_time_steps(path: Path) -> dict[str, int]:
     """Read only the first two columns of the feature file.
 
@@ -174,10 +216,12 @@ def load_elliptic(data_dir: Path = DEFAULT_DATA_DIR) -> EllipticGraph:
             elif row[1] == LABEL_LICIT:
                 labels[row[0]] = 0
 
+    cache = data_dir / TIMESTEP_FILE
+    steps_path = cache if cache.exists() else data_dir / FEATURE_FILE
     return EllipticGraph(
         graph=graph,
         labels=labels,
-        time_steps=_read_time_steps(data_dir / FEATURE_FILE),
+        time_steps=_read_time_steps(steps_path),
     )
 
 

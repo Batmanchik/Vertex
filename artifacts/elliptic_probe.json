@@ -1,0 +1,395 @@
+{
+  "task": "4.1 Elliptic probe",
+  "dataset": {
+    "nodes": 203769,
+    "edges": 234355,
+    "labelled": 46564,
+    "illicit": 4545,
+    "licit": 42019
+  },
+  "cases": {
+    "rows": 46564,
+    "illicit": 4545,
+    "prevalence": 0.0976,
+    "hops": 2,
+    "cap": 400,
+    "limit": null,
+    "build_seconds": 25.8
+  },
+  "protocol": {
+    "detector": "RandomForestClassifier(n_estimators=300, min_samples_leaf=2)",
+    "split": "purged walk-forward over Elliptic time steps",
+    "n_splits": 5,
+    "purge_steps": 1,
+    "threshold_policy": "chosen on earlier folds at recall 0.8, applied to the last",
+    "seed": 42
+  },
+  "single_feature_auc_in_sample": {
+    "density": 0.5438,
+    "hub_share": 0.6206,
+    "fanout_share": 0.4722,
+    "relay_share": 0.4814,
+    "reciprocity": 0.5,
+    "in_degree": 0.4728,
+    "out_degree": 0.4049,
+    "case_size": 0.4525
+  },
+  "arms": {
+    "structural": {
+      "features": [
+        "density",
+        "hub_share",
+        "fanout_share",
+        "relay_share",
+        "reciprocity"
+      ],
+      "folds": [
+        {
+          "fold": 0,
+          "train_steps": [
+            1,
+            8
+          ],
+          "test_steps": [
+            10,
+            17
+          ],
+          "purged_steps": [
+            9
+          ],
+          "n_train": 10718,
+          "n_test": 5359,
+          "prevalence": 0.1629,
+          "roc_auc": 0.6944
+        },
+        {
+          "fold": 1,
+          "train_steps": [
+            1,
+            16
+          ],
+          "test_steps": [
+            18,
+            25
+          ],
+          "purged_steps": [
+            17
+          ],
+          "n_train": 16044,
+          "n_test": 7345,
+          "prevalence": 0.1304,
+          "roc_auc": 0.7511
+        },
+        {
+          "fold": 2,
+          "train_steps": [
+            1,
+            24
+          ],
+          "test_steps": [
+            26,
+            33
+          ],
+          "purged_steps": [
+            25
+          ],
+          "n_train": 23606,
+          "n_test": 5179,
+          "prevalence": 0.2101,
+          "roc_auc": 0.7098
+        },
+        {
+          "fold": 3,
+          "train_steps": [
+            1,
+            32
+          ],
+          "test_steps": [
+            34,
+            41
+          ],
+          "purged_steps": [
+            33
+          ],
+          "n_train": 28938,
+          "n_test": 8344,
+          "prevalence": 0.0853,
+          "roc_auc": 0.6171
+        },
+        {
+          "fold": 4,
+          "train_steps": [
+            1,
+            40
+          ],
+          "test_steps": [
+            42,
+            49
+          ],
+          "purged_steps": [
+            41
+          ],
+          "n_train": 36591,
+          "n_test": 8841,
+          "prevalence": 0.0461,
+          "roc_auc": 0.7338
+        }
+      ],
+      "pooled_roc_auc": 0.6654,
+      "mean_fold_roc_auc": 0.7012,
+      "prevalence": 0.1152,
+      "operating_point": {
+        "threshold": 0.018086329392928858,
+        "flagged": 6105.0,
+        "recall": 0.9142156862745098,
+        "precision": 0.0610974610974611,
+        "f1": 0.11454015046829419,
+        "target_recall": 0.8,
+        "test_steps": [
+          42,
+          49
+        ],
+        "prevalence": 0.0461
+      }
+    },
+    "structural_plus_local": {
+      "features": [
+        "density",
+        "hub_share",
+        "fanout_share",
+        "relay_share",
+        "reciprocity",
+        "in_degree",
+        "out_degree",
+        "case_size"
+      ],
+      "folds": [
+        {
+          "fold": 0,
+          "train_steps": [
+            1,
+            8
+          ],
+          "test_steps": [
+            10,
+            17
+          ],
+          "purged_steps": [
+            9
+          ],
+          "n_train": 10718,
+          "n_test": 5359,
+          "prevalence": 0.1629,
+          "roc_auc": 0.7221
+        },
+        {
+          "fold": 1,
+          "train_steps": [
+            1,
+            16
+          ],
+          "test_steps": [
+            18,
+            25
+          ],
+          "purged_steps": [
+            17
+          ],
+          "n_train": 16044,
+          "n_test": 7345,
+          "prevalence": 0.1304,
+          "roc_auc": 0.7645
+        },
+        {
+          "fold": 2,
+          "train_steps": [
+            1,
+            24
+          ],
+          "test_steps": [
+            26,
+            33
+          ],
+          "purged_steps": [
+            25
+          ],
+          "n_train": 23606,
+          "n_test": 5179,
+          "prevalence": 0.2101,
+          "roc_auc": 0.7325
+        },
+        {
+          "fold": 3,
+          "train_steps": [
+            1,
+            32
+          ],
+          "test_steps": [
+            34,
+            41
+          ],
+          "purged_steps": [
+            33
+          ],
+          "n_train": 28938,
+          "n_test": 8344,
+          "prevalence": 0.0853,
+          "roc_auc": 0.6784
+        },
+        {
+          "fold": 4,
+          "train_steps": [
+            1,
+            40
+          ],
+          "test_steps": [
+            42,
+            49
+          ],
+          "purged_steps": [
+            41
+          ],
+          "n_train": 36591,
+          "n_test": 8841,
+          "prevalence": 0.0461,
+          "roc_auc": 0.7499
+        }
+      ],
+      "pooled_roc_auc": 0.6964,
+      "mean_fold_roc_auc": 0.7295,
+      "prevalence": 0.1152,
+      "operating_point": {
+        "threshold": 0.017844849246861312,
+        "flagged": 5896.0,
+        "recall": 0.9093137254901961,
+        "precision": 0.06292401628222524,
+        "f1": 0.1177030456852792,
+        "target_recall": 0.8,
+        "test_steps": [
+          42,
+          49
+        ],
+        "prevalence": 0.0461
+      }
+    },
+    "control_shuffled_labels": {
+      "features": [
+        "density",
+        "hub_share",
+        "fanout_share",
+        "relay_share",
+        "reciprocity"
+      ],
+      "folds": [
+        {
+          "fold": 0,
+          "train_steps": [
+            1,
+            8
+          ],
+          "test_steps": [
+            10,
+            17
+          ],
+          "purged_steps": [
+            9
+          ],
+          "n_train": 10718,
+          "n_test": 5359,
+          "prevalence": 0.1629,
+          "roc_auc": 0.5591
+        },
+        {
+          "fold": 1,
+          "train_steps": [
+            1,
+            16
+          ],
+          "test_steps": [
+            18,
+            25
+          ],
+          "purged_steps": [
+            17
+          ],
+          "n_train": 16044,
+          "n_test": 7345,
+          "prevalence": 0.1304,
+          "roc_auc": 0.4515
+        },
+        {
+          "fold": 2,
+          "train_steps": [
+            1,
+            24
+          ],
+          "test_steps": [
+            26,
+            33
+          ],
+          "purged_steps": [
+            25
+          ],
+          "n_train": 23606,
+          "n_test": 5179,
+          "prevalence": 0.2101,
+          "roc_auc": 0.5802
+        },
+        {
+          "fold": 3,
+          "train_steps": [
+            1,
+            32
+          ],
+          "test_steps": [
+            34,
+            41
+          ],
+          "purged_steps": [
+            33
+          ],
+          "n_train": 28938,
+          "n_test": 8344,
+          "prevalence": 0.0853,
+          "roc_auc": 0.4915
+        },
+        {
+          "fold": 4,
+          "train_steps": [
+            1,
+            40
+          ],
+          "test_steps": [
+            42,
+            49
+          ],
+          "purged_steps": [
+            41
+          ],
+          "n_train": 36591,
+          "n_test": 8841,
+          "prevalence": 0.0461,
+          "roc_auc": 0.51
+        }
+      ],
+      "pooled_roc_auc": 0.4725,
+      "mean_fold_roc_auc": 0.5185,
+      "prevalence": 0.1152,
+      "operating_point": {
+        "threshold": 0.02348962248495882,
+        "flagged": 8443.0,
+        "recall": 0.9485294117647058,
+        "precision": 0.045836787871609615,
+        "f1": 0.08744774601739917,
+        "target_recall": 0.8,
+        "test_steps": [
+          42,
+          49
+        ],
+        "prevalence": 0.0461
+      }
+    }
+  },
+  "margin_over_control": 0.1929,
+  "runtime_seconds": 52.7
+}
