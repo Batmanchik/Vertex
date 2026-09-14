@@ -209,7 +209,7 @@ def contributions(
         return None
 
     base = float(values[-1])
-    items = [
+    items: list[dict[str, Any]] = [
         {
             "feature": name,
             "value": float(input_df.iloc[0][name]),
@@ -217,8 +217,8 @@ def contributions(
         }
         for index, name in enumerate(feature_names)
     ]
-    items.sort(key=lambda item: abs(item["contribution"]), reverse=True)
-    logit = base + sum(item["contribution"] for item in items)
+    items.sort(key=lambda item: abs(float(item["contribution"])), reverse=True)
+    logit = base + sum(float(item["contribution"]) for item in items)
     return {
         "base_value": base,
         "logit": logit,

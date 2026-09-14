@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import statistics
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -17,18 +18,26 @@ ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "artifacts"
 
 
-def _load(name: str) -> dict[str, Any] | list[Any] | None:
+def _load(name: str) -> dict[str, Any] | None:
+    """Один прогон из ``artifacts/``, или ``None``, если его нет.
+
+    Файл, который не является объектом, считается отсутствующим: каждый
+    прогон этого проекта пишет объект с шапкой, и список на его месте — это
+    другой формат, а не пустой результат. Раздел витрины тогда честно скажет
+    «прогона не было» вместо того, чтобы падать на первом же ``.get``.
+    """
     path = ARTIFACTS / name
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return None
+    return raw if isinstance(raw, dict) else None
 
 
-def _mean(values: list[float]) -> float | None:
-    clean = [v for v in values if v is not None]
+def _mean(values: Sequence[float | None]) -> float | None:
+    clean = [value for value in values if value is not None]
     return statistics.fmean(clean) if clean else None
 
 
