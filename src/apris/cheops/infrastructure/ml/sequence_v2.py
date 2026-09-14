@@ -275,45 +275,23 @@ def load_sequence_artifact(path: str | Path = SEQUENCE_V2_ARTIFACT_PATH) -> dict
 
 
 def extract_sequence_features_from_case_window(case_window: CaseWindow) -> dict[str, float]:
-    events = case_window.events
-    if len(events) == 0:
+    """The five sequence features of one case window.
+
+    Delegates to ``event_features_v2`` so that training, serving and the
+    measurement loop read one definition of each feature. They used to differ:
+    this function computed ``burst_ratio_90s`` as the share of consecutive
+    gaps under 90 seconds, while the training matrix derived the same name
+    from nine daily aggregates. A model fitted on one and served the other is
+    fitted on a distribution it never meets, and nothing in the output says
+    so — the score simply comes back wrong in a plausible way.
+
+    The graph branch already delegated; this closes the pair.
+    """
+    from apris.cheops.infrastructure.ml.event_features_v2 import sequence_features_from_events
+
+    if len(case_window.events) == 0:
         raise ValueError("Case window contains no events.")
-
-    span_seconds = max((case_window.end_ts - case_window.start_ts).total_seconds(), 60.0)
-    span_hours = span_seconds / 3600.0
-    rate = len(events) / span_hours
-    event_rate_hour = 1.0 - math.exp(-rate / 4.0)
-
-    jumps = 0
-    deltas: list[float] = []
-    for idx in range(1, len(events)):
-        delta_sec = max((events[idx].ts - events[idx - 1].ts).total_seconds(), 0.0)
-        deltas.append(delta_sec)
-        if delta_sec <= 90.0:
-            jumps += 1
-    burst_ratio_90s = jumps / max(len(events) - 1, 1)
-
-    if deltas:
-        median_delta_minutes = float(np.median(np.asarray(deltas, dtype=float)) / 60.0)
-    else:
-        median_delta_minutes = 60.0
-    median_delta_inverse = 1.0 / (1.0 + (median_delta_minutes / 60.0))
-
-    amounts = np.asarray([float(event.amount) for event in events], dtype=float)
-    mean_amount = float(np.mean(amounts)) if amounts.size > 0 else 0.0
-    std_amount = float(np.std(amounts, ddof=0)) if amounts.size > 0 else 0.0
-    amount_cv = 0.0 if mean_amount <= 0 else std_amount / mean_amount
-    amount_cv_norm = min(amount_cv / 2.0, 1.0)
-
-    unique_sender_ratio = len({event.sender_id for event in events}) / max(len(events), 1)
-
-    return {
-        "event_rate_hour": _clip01(event_rate_hour),
-        "burst_ratio_90s": _clip01(burst_ratio_90s),
-        "median_delta_inverse": _clip01(median_delta_inverse),
-        "amount_cv_norm": _clip01(amount_cv_norm),
-        "unique_sender_ratio": _clip01(unique_sender_ratio),
-    }
+    return sequence_features_from_events(case_window.events)
 
 
 def predict_sequence_from_case_window(case_window: CaseWindow, artifact: dict[str, Any]) -> float:
