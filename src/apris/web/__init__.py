@@ -1,4 +1,4 @@
-"""Витрина измерений Vertex поверх существующего FastAPI."""
-from apris.web.routes import router, static
+"""Витрина измерений Vertex: сборщик страницы и её маршруты."""
+from apris.web.routes import router
 
-__all__ = ["router", "static"]
+__all__ = ["router"]

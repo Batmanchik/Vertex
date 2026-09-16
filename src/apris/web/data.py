@@ -18,22 +18,37 @@ ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "artifacts"
 
 
-def _load(name: str) -> dict[str, Any] | None:
-    """Один прогон из ``artifacts/``, или ``None``, если его нет.
-
-    Файл, который не является объектом, считается отсутствующим: каждый
-    прогон этого проекта пишет объект с шапкой, и список на его месте — это
-    другой формат, а не пустой результат. Раздел витрины тогда честно скажет
-    «прогона не было» вместо того, чтобы падать на первом же ``.get``.
-    """
+def _read_json(name: str) -> Any:
+    """Сырое содержимое файла прогона, или ``None``, если его нет."""
     path = ARTIFACTS / name
     if not path.exists():
         return None
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return None
+
+
+def _load(name: str) -> dict[str, Any] | None:
+    """Прогон, записанный объектом.
+
+    Почти каждый артефакт этого проекта — объект с шапкой, и вызывающая
+    сторона читает его через ``.get``. Файл другой формы считается
+    отсутствующим: раздел витрины тогда честно скажет «прогона не было»
+    вместо того, чтобы падать на первом же обращении.
+
+    Список — законный формат ровно для одного файла, и он читается
+    ``_load_list``. Не путайте их: тихо возвращённый ``None`` на списке
+    выглядит на витрине как «прогона не было», хотя прогон есть.
+    """
+    raw = _read_json(name)
     return raw if isinstance(raw, dict) else None
+
+
+def _load_list(name: str) -> list[Any] | None:
+    """Прогон, записанный списком (``feature_importances.json``)."""
+    raw = _read_json(name)
+    return raw if isinstance(raw, list) else None
 
 
 def _mean(values: Sequence[float | None]) -> float | None:
@@ -283,9 +298,9 @@ def flow_weight() -> tuple[FlowWeight, RunMeta]:
 # Признаки
 # ──────────────────────────────────────────────────────────────────────
 def features() -> tuple[list[tuple[str, float]], RunMeta]:
-    raw = _load("feature_importances.json")
+    raw = _load_list("feature_importances.json")
     meta = RunMeta(source="artifacts/feature_importances.json")
-    if not isinstance(raw, list):
+    if raw is None:
         return [], meta
     rows = [(item["feature"], float(item["importance"])) for item in raw]
     rows.sort(key=lambda pair: pair[1], reverse=True)
@@ -580,6 +595,170 @@ def curves() -> tuple[CurveSet, RunMeta]:
     )
 
 
+
+# ──────────────────────────────────────────────────────────────────────
+# Внешняя валидация: Elliptic (задача 4.1)
+# ──────────────────────────────────────────────────────────────────────
+@dataclass
+class EllipticArm:
+    key: str
+    label: str
+    pooled: float | None
+    mean_fold: float | None
+    folds: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
+class Elliptic:
+    dataset: dict[str, int] = field(default_factory=dict)
+    cases: dict[str, Any] = field(default_factory=dict)
+    arms: list[EllipticArm] = field(default_factory=list)
+    single_feature: list[tuple[str, float]] = field(default_factory=list)
+    operating_point: dict[str, float] = field(default_factory=dict)
+    margin: float | None = None
+    present: bool = False
+
+
+ELLIPTIC_ARM_LABELS = {
+    "structural": "форма потока",
+    "structural_plus_local": "форма плюс активность узла",
+    "control_shuffled_labels": "контроль: метки перемешаны",
+}
+
+
+def elliptic() -> tuple[Elliptic, RunMeta]:
+    raw = _load("elliptic_probe.json")
+    meta = RunMeta(source="artifacts/elliptic_probe.json")
+    if not raw:
+        return Elliptic(), meta
+
+    arms = [
+        EllipticArm(
+            key=key,
+            label=ELLIPTIC_ARM_LABELS.get(key, key),
+            pooled=(raw.get("arms", {}).get(key) or {}).get("pooled_roc_auc"),
+            mean_fold=(raw.get("arms", {}).get(key) or {}).get("mean_fold_roc_auc"),
+            folds=(raw.get("arms", {}).get(key) or {}).get("folds", []),
+        )
+        for key in ELLIPTIC_ARM_LABELS
+        if key in raw.get("arms", {})
+    ]
+    point = (raw.get("arms", {}).get("structural") or {}).get("operating_point") or {}
+    return (
+        Elliptic(
+            dataset=raw.get("dataset", {}),
+            cases=raw.get("cases", {}),
+            arms=arms,
+            single_feature=sorted(
+                raw.get("single_feature_auc_in_sample", {}).items(),
+                key=lambda pair: pair[1],
+                reverse=True,
+            ),
+            operating_point=point,
+            margin=raw.get("margin_over_control"),
+            present=True,
+        ),
+        meta,
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Панель: кейс на каждую дату (задача 4.11)
+# ──────────────────────────────────────────────────────────────────────
+@dataclass
+class PanelWorld:
+    seed: int
+    rows: int
+    cases: int
+    dates: int
+    fraud_share: float
+    share_min: float | None
+    share_max: float | None
+    protocols: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+
+@dataclass
+class Panel:
+    worlds: list[PanelWorld] = field(default_factory=list)
+    cadence_days: int = 0
+    present: bool = False
+
+    def pooled(self, protocol: str, detector: str) -> list[float]:
+        out = []
+        for world in self.worlds:
+            value = (world.protocols.get(protocol, {}).get(detector) or {}).get("pooled_roc_auc")
+            if value is not None:
+                out.append(float(value))
+        return out
+
+
+def panel() -> tuple[Panel, RunMeta]:
+    raw = _load("case_panel.json")
+    meta = RunMeta(source="artifacts/case_panel.json")
+    if not raw:
+        return Panel(), meta
+    worlds_out: list[PanelWorld] = []
+    for entry in raw.get("worlds", []):
+        share = entry.get("fraud_share_by_date", {})
+        worlds_out.append(
+            PanelWorld(
+                seed=int(entry.get("seed", 0)),
+                rows=int(entry.get("rows", 0)),
+                cases=int(entry.get("cases", 0)),
+                dates=int(entry.get("dates", 0)),
+                fraud_share=float(entry.get("fraud_share", 0.0)),
+                share_min=share.get("min"),
+                share_max=share.get("max"),
+                protocols={
+                    name: entry.get(name, {})
+                    for name in ("time_forward", "case_holdout")
+                },
+            )
+        )
+    return Panel(worlds=worlds_out, cadence_days=int(raw.get("cadence_days", 0)), present=True), meta
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Ветви ансамбля (задача 4.2)
+# ──────────────────────────────────────────────────────────────────────
+@dataclass
+class Branch:
+    key: str
+    label: str
+    across: dict[str, Any] = field(default_factory=dict)
+    within: dict[str, Any] = field(default_factory=dict)
+    seeds: list[int] = field(default_factory=list)
+    generated_at: str = ""
+    present: bool = False
+
+
+BRANCH_FILES = {
+    "graph": ("cheops_v2_graph_metrics.json", "графовая"),
+    "sequence": ("cheops_v2_sequence_metrics.json", "последовательностная"),
+}
+
+
+def branches() -> list[Branch]:
+    out: list[Branch] = []
+    for key, (name, label) in BRANCH_FILES.items():
+        raw = _load(name)
+        if not raw or "across_worlds" not in raw:
+            out.append(Branch(key=key, label=label))
+            continue
+        out.append(
+            Branch(
+                key=key,
+                label=label,
+                across=raw.get("across_worlds", {}),
+                within=raw.get("within_world", {}),
+                seeds=list(raw.get("seeds", [])),
+                generated_at=str(raw.get("generated_at", ""))[:19].replace("T", " "),
+                present=True,
+            )
+        )
+    return out
+
+
 def snapshot() -> dict[str, Any]:
     """Всё сразу — то, что рендерит витрина."""
     world_rows, world_meta = worlds()
@@ -592,7 +771,12 @@ def snapshot() -> dict[str, Any]:
     bl, bl_meta = blocks()
     op, op_meta = operating_points()
     cv, cv_meta = curves()
+    el, el_meta = elliptic()
+    pn, pn_meta = panel()
     return {
+        "elliptic": el, "elliptic_meta": el_meta,
+        "panel": pn, "panel_meta": pn_meta,
+        "branches": branches(),
         "curves": cv, "curves_meta": cv_meta,
         "matrix": mm, "matrix_meta": mm_meta,
         "blocks": bl, "blocks_meta": bl_meta,

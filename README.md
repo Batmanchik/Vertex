@@ -165,6 +165,25 @@ Runtime inference behavior for v2:
 - If `cheops_v2_fusion_meta.joblib` exists, engine uses calibrated logistic fusion head for `global_risk`.
 - If fusion artifact is absent, engine falls back to deterministic weighted fusion (v1-compatible behavior).
 
+## The showcase (one static file)
+
+```
+python scripts/make_site.py
+```
+
+Writes `artifacts/site/index.html` — every measurement the project has, with
+what each number does not prove, as one self-contained page: no server, no
+network, no fonts to fetch. Open it by double-clicking, from a memory stick,
+on someone else's laptop with the wi-fi off. It is the page to show at a
+defence, and it is rebuilt from `artifacts/*.json`, so a recomputed run
+changes it and nothing is typed in by hand.
+
+The same page is served at `http://127.0.0.1:8000/` when the API is up, and
+embedded in the interface under **Измерения** — one builder, so the three
+cannot drift apart. The Streamlit showcase that used to live here was removed:
+it re-rendered in python on every interaction, which is visible when someone
+is watching.
+
 ## Run the whole thing (one command)
 
 ```
@@ -172,12 +191,10 @@ python scripts/run_demo.py                  # quick world
 python scripts/run_demo.py --preset full    # the world the audit was measured on
 ```
 
-Then open **http://127.0.0.1:8501** and go to **Витрина Vertex** — the showcase
-page. Seven tabs: the five topologies as graphs drawn from events, the crypto
-channel, the five worlds, rarity with a slider that re-prices the measured ROC
-curve, the evasion curve, the analyst queue, and buttons that launch the real
-runs. That page is the demo; everything else in the interface is the machinery
-behind it.
+This rebuilds the analyst queue and brings up the API and the interface. The
+page to *show* is the static one above (`scripts/make_site.py`); the interface
+is the machinery behind it — network discovery, a candidate's dossier,
+validation, manual entry, the queue.
 
 It builds the analyst queue, starts the API, waits for its health check
 rather than sleeping, starts Streamlit, waits for that, and prints the URL.

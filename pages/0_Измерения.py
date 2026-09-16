@@ -1,13 +1,13 @@
-"""Витрина измерений внутри интерфейса, чтобы адрес был один.
+"""Витрина внутри интерфейса, чтобы адрес на защите был один.
 
-Раньше витрина жила на отдельном порту под FastAPI, а интерфейс на своём,
-и на защите приходилось держать две ссылки. Разметка и числа здесь те же
-самые: страница собирается тем же кодом, что отдаёт HTTP-версия, поэтому
-разъехаться они не могут.
+Сама витрина — статический файл: её собирает `python scripts/make_site.py`,
+и она открывается двойным щелчком, без сервера и без сети. Здесь она просто
+вставлена в рамку, чтобы из интерфейса не приходилось никуда уходить.
 
-Страница вставляется в рамку, а не печатается через st.html: на ней есть
-холст с анимацией и ползунок, а Streamlit вырезает скрипты из обычной
-разметки.
+Раньше на этом месте была страница, которую Streamlit рисовал сам: каждый
+ползунок шёл на сервер, каждая перерисовка считалась питоном, и на показе это
+было видно. Теперь питон работает один раз при сборке, а на защите работает
+только браузер.
 """
 from __future__ import annotations
 
@@ -25,40 +25,25 @@ import streamlit as st
 
 st.set_page_config(page_title="Измерения | Vertex", page_icon="📊", layout="wide")
 
+SITE = _PROJECT_ROOT / "artifacts" / "site" / "index.html"
+
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _page_html() -> str:
-    from apris.web.page import render_standalone
+    """Готовый файл, если он собран; иначе собрать прямо сейчас."""
+    if SITE.exists():
+        return SITE.read_text(encoding="utf-8")
+    from apris.web.site import build
 
-    return render_standalone()
-
-
-def _embed(html: str, *, height: int) -> None:
-    """Показать готовую страницу в рамке.
-
-    ``st.iframe`` появился недавно и берёт путь к файлу, а не разметку, поэтому
-    строка сначала кладётся во временный файл. На старых версиях Streamlit
-    остаётся прежний вызов, который там пока работает.
-    """
-    if hasattr(st, "iframe"):
-        import tempfile
-
-        cache = Path(tempfile.gettempdir()) / "vertex_measurements.html"
-        cache.write_text(html, encoding="utf-8")
-        st.iframe(cache, height=height)
-        return
-
-    import streamlit.components.v1 as components
-
-    components.html(html, height=height, scrolling=True)
+    return build()
 
 
 st.title("📊 Витрина измерений")
 st.caption(
-    "Двенадцать разделов: лестница миров, кривая уклонения, редкость, параметр W, "
-    "сравнение моделей, алгоритмы обучения, кривые детектора, формулы, признаки, "
-    "очередь аналитика, типологии, состав мира. Каждое число читается из файла "
-    "прогона в artifacts/ при открытии страницы."
+    "Девятнадцать разделов: очередь аналитика, лестница миров, цена уклонения, редкость, "
+    "правила против модели, потолки, кривые детектора, панель, ветви ансамбля, параметр W, "
+    "настоящие данные, методология, шесть дефектов, разрыв до цели и вопросы жюри. "
+    "Каждое число читается из файла прогона в artifacts/."
 )
 
 try:
@@ -68,10 +53,17 @@ except Exception as exc:  # прогонов может не быть на св�
         "Витрина не собралась. Обычно это значит, что в artifacts/ нет файлов "
         f"прогонов.\n\nПричина: {exc}"
     )
-    st.code("python scripts/run_experiment_ladder.py --seeds 1 --days 30", language="bash")
+    st.code("python scripts/run_pipeline.py --preset full", language="bash")
 else:
-    _embed(html, height=2400)
+    if hasattr(st, "iframe") and SITE.exists():
+        st.iframe(SITE, height=2400)
+    else:
+        import streamlit.components.v1 as components
+
+        components.html(html, height=2400, scrolling=True)
+
     st.caption(
-        "Та же страница отдаётся и напрямую, если поднят API: "
-        "`python -m uvicorn apris.api.main:app --port 8000`, адрес http://localhost:8000/"
+        "На защите лучше открывать её отдельно — файл `artifacts/site/index.html` "
+        "открывается мгновенно и работает без интернета. Пересобрать: "
+        "`python scripts/make_site.py`."
     )

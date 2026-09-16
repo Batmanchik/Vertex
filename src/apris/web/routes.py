@@ -1,29 +1,27 @@
-"""Витрина измерений: HTML-страница и JSON тех же чисел.
+"""Витрина измерений: страница и те же числа в JSON.
 
-Страница отдаётся тем же процессом, что и API, поэтому отдельного фронтенда
-и сборки не требуется. Данные читаются из artifacts/ на каждый запрос.
+Страницу собирает :mod:`apris.web.site` — один самодостаточный файл без
+внешних запросов. Тот же код кладёт её на диск командой
+``python scripts/make_site.py``, поэтому HTTP-версия и файл на флешке не
+могут разъехаться: сборщик один.
 """
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from apris.web import data, page
-
-templates = Jinja2Templates(directory=str(page.TEMPLATES))
-static = StaticFiles(directory=str(page.STATIC))
+from apris.web import data, site
 
 router = APIRouter(tags=["web"])
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
-def results_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "results.html", page.build_context())
+def results_page() -> HTMLResponse:
+    """Витрина, собранная на текущих файлах прогонов."""
+    return HTMLResponse(site.build())
 
 
 def _plain(value: Any) -> Any:

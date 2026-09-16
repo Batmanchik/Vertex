@@ -99,9 +99,9 @@ app = FastAPI(
 )
 
 # Витрина измерений: та же машина, тот же процесс, отдельной сборки нет.
-from apris.web import router as _web_router, static as _web_static  # noqa: E402
+# Статики больше нет — страница самодостаточна, стили и скрипт внутри неё.
+from apris.web import router as _web_router  # noqa: E402
 
-app.mount("/static", _web_static, name="web_static")
 app.include_router(_web_router)
 
 

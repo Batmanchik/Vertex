@@ -27,12 +27,12 @@ FORBIDDEN_IMPORTS = (
     "apris.crypto_ponzi.visualizations",
 )
 
-# The showcase page is allowed to draw the company-level demo, because that
-# scenario is generated rather than detected and the picture is built from
-# its transactions, not from a verdict. The permission is conditional: the
-# page must say so on screen, and this marker is what says it.
+# No page is allowed to draw a generated demo any more: the showcase moved
+# out of Streamlit into a static page built by `scripts/make_site.py`, and
+# the exception it used to hold went with it. The marker stays so that a
+# page bringing the permission back has to declare it on screen first.
 DEMO_MARKER = "синтетический демонстрационный сценарий"
-DEMO_ALLOWED = {"6_Витрина_Vertex.py"}
+DEMO_ALLOWED: set[str] = set()
 
 
 def test_there_are_pages_to_check() -> None:
