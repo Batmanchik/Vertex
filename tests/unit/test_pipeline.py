@@ -181,15 +181,6 @@ def test_a_missing_queue_file_is_not_an_error(tmp_path):
 # ==========================================================================
 
 
-def test_the_interface_and_the_pipeline_share_one_definition_of_the_world():
-    """Раньше пресеты жили в интерфейсе, и скрипт строил свой мир. Два экрана
-    с разными числами про «тот же прогон» — то, ради чего это съехалось."""
-    from apris.frontend import session
-
-    assert session.SCALES is PRESETS
-    assert session.DEFAULT_SCALE == DEFAULT_PRESET
-
-
 def test_seed_is_applied_and_the_rest_of_the_preset_is_not_touched():
     config = preset_config("quick", seed=999)
     assert config.seed == 999

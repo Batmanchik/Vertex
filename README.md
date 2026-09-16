@@ -9,7 +9,8 @@
 > `docs/archive/`, which must not be quoted.
 
 Vertex is a local MVP for detection of multi-channel financial fraud patterns (legal + crypto).
-It combines ML risk scoring, ETL for transaction logs, a FastAPI backend, and a Streamlit multipage frontend.
+It combines ML risk scoring, ETL for transaction logs, and a FastAPI service that
+also serves the whole project as one local site.
 
 ## Where the project stands
 
@@ -42,14 +43,14 @@ and closing it is what `PLAN.md` §8 orders.
 - `src/apris/etl.py` - CSV/JSON ingestion and operational-to-feature transformation.
 - `src/apris/train_model.py` - model training, metrics, artifact export, MLflow logging.
 - `src/apris/cheops/infrastructure/ml/tabular_v2.py` - tabular v2 bundle training (global + typology + isotonic calibration).
-- `src/apris/frontend/api_client.py` - HTTP client used by Streamlit pages.
-- `src/apris/frontend/scanner_pipeline.py` - optimized case builder for scanner page (feature/transaction modes).
-- `pages/` - Streamlit multipage UI (network discovery, candidate dossier,
-  validation, manual check). No page loads a model: scoring goes through the API.
+- `src/apris/web/site.py` - the site: every section, every chart, built from
+  `artifacts/*.json`. Served by the API at `/` and written to a file by
+  `scripts/make_site.py`.
+- `src/apris/web/data.py` - the one reader of the run artifacts.
 - `tests/` - pytest-based test suite (`unit`, `api`, `smoke`).
 
 ## Runtime vs Source Directories
-- Source code: `src/`, `pages/`, `tests/`, `scripts/`.
+- Source code: `src/`, `tests/`, `scripts/`.
 - Runtime/generated data: `artifacts/`, `mlruns/`, `.run/`.
 - Virtual environments/backups: `.venv/`, `.venv_*`.
 
@@ -59,54 +60,28 @@ This repository keeps runtime directories for local experimentation. They are no
 - Canonical dependency spec: `pyproject.toml` (`[project.dependencies]` and `[project.optional-dependencies].dev`).
 - `requirements.txt` is kept in sync for convenience and mirrors runtime dependencies from `pyproject.toml`.
 
-## Run (PowerShell-only)
-Use the unified launcher:
+## Run (PowerShell)
 
 ```powershell
-.\scripts\app.ps1 start
+.\scripts\app.ps1 start     # rebuilds the queue, serves the site on 127.0.0.1:8000
 .\scripts\app.ps1 status
 .\scripts\app.ps1 open
 .\scripts\app.ps1 stop
 ```
 
-What `start` does:
-- bootstraps `.venv` if missing,
-- installs project and dev dependencies from `pyproject.toml` via `pip install -e ".[dev]"`,
-- starts FastAPI on `127.0.0.1:8000`,
-- starts Streamlit on `127.0.0.1:8501`,
-- writes PID files to `.run/`,
-- writes logs to `.run/api.out.log`, `.run/api.err.log`, `.run/streamlit.out.log`, `.run/streamlit.err.log`.
-
-Frontend API client environment:
-- `CHEOPS_API_BASE_URL` (default: `http://127.0.0.1:8000`)
-- `CHEOPS_API_TIMEOUT` in seconds (optional)
-- `CHEOPS_API_RETRIES` for retryable GET calls (default: `1`)
-- `CHEOPS_API_RETRY_BACKOFF` in seconds between retries (default: `0.2`)
+One process, one address. Logs go to `.run/api.out.log` and `.run/api.err.log`,
+the pid to `.run/api.pid`.
 
 ## Run (Docker Compose)
-Containerized run for API + UI:
-
-Prerequisite:
-- Docker Desktop / Docker Engine with Compose plugin.
 
 ```bash
 docker compose up -d --build
 docker compose ps
 ```
 
-Open:
-- UI: `http://127.0.0.1:8501`
-- API: `http://127.0.0.1:8000`
-
-Stop:
-
-```bash
-docker compose down -v
-```
-
-Notes:
-- `ui` service uses `CHEOPS_API_BASE_URL=http://api:8000` inside Compose network.
-- Runtime folders are mounted from host: `./artifacts`, `./mlruns`, `./.run`.
+Open `http://127.0.0.1:8000` — the site and the API are one service. Stop with
+`docker compose down -v`. Runtime folders are mounted from the host:
+`./artifacts`, `./mlruns`, `./.run`.
 
 ## Train Model
 Train on synthetic data:
@@ -165,44 +140,35 @@ Runtime inference behavior for v2:
 - If `cheops_v2_fusion_meta.joblib` exists, engine uses calibrated logistic fusion head for `global_risk`.
 - If fusion artifact is absent, engine falls back to deterministic weighted fusion (v1-compatible behavior).
 
-## The showcase (one static file)
+## Run it (one command, one address)
+
+```
+python scripts/serve.py          # http://127.0.0.1:8000
+```
+
+That address **is** the project. Everything lives on that one page: what the
+system is and how it works, the world and its typologies, discovery, a
+candidate's dossier, validation, a form that scores live against the same
+process, the analyst queue, every measurement with what it does not prove, the
+six defects found in our own work, the gap to the target, and the questions the
+panel will ask. There is no second interface to keep in sync — the Streamlit
+one was removed, along with the second address and its lag.
+
+The page is rebuilt from `artifacts/*.json` on every request: recompute a run,
+refresh the tab.
+
+## The same page as a file
 
 ```
 python scripts/make_site.py
 ```
 
-Writes `artifacts/site/index.html` — every measurement the project has, with
-what each number does not prove, as one self-contained page: no server, no
-network, no fonts to fetch. Open it by double-clicking, from a memory stick,
-on someone else's laptop with the wi-fi off. It is the page to show at a
-defence, and it is rebuilt from `artifacts/*.json`, so a recomputed run
-changes it and nothing is typed in by hand.
+Writes `artifacts/site/index.html`: the same page, self-contained — no server,
+no network, no fonts to fetch, images embedded. Open it by double-clicking,
+from a memory stick, on someone else's laptop with the wi-fi off. Everything
+works except the live scoring form, which needs the service and says so.
 
-The same page is served at `http://127.0.0.1:8000/` when the API is up, and
-embedded in the interface under **Измерения** — one builder, so the three
-cannot drift apart. The Streamlit showcase that used to live here was removed:
-it re-rendered in python on every interaction, which is visible when someone
-is watching.
-
-## Run the whole thing (one command)
-
-```
-python scripts/run_demo.py                  # quick world
-python scripts/run_demo.py --preset full    # the world the audit was measured on
-```
-
-This rebuilds the analyst queue and brings up the API and the interface. The
-page to *show* is the static one above (`scripts/make_site.py`); the interface
-is the machinery behind it — network discovery, a candidate's dossier,
-validation, manual entry, the queue.
-
-It builds the analyst queue, starts the API, waits for its health check
-rather than sleeping, starts Streamlit, waits for that, and prints the URL.
-Ctrl+C stops both. The health checks are the same ones `docker-compose.yml`
-uses, so "it did not come up" is diagnosed the same way with or without
-Docker.
-
-The queue on its own, without the interface:
+## The queue on its own
 
 ```
 python scripts/run_pipeline.py --preset full --target-recall 0.8
@@ -216,45 +182,16 @@ on Monday. The queue's LENGTH is an output, not a setting: that is the
 prevalence result (R6) made operational, since a fixed review budget is the
 wrong policy once fraud is rare.
 
-## Interface
+`scripts/serve.py` runs this for you before it opens the port.
 
-Five pages, and the order is the workflow:
+## What the site deliberately does not do
 
-1. **Поиск сетей** — `discover_candidates` proposes clusters from the event
-   stream alone. Labels are attached afterwards, so the coverage shown is a
-   real ceiling on recall rather than 1.0 by construction.
-2. **Досье кандидата** — the candidate's own transfer graph, its ten
-   event-derived features, and the score returned by `/api/v2/score`. Branch
-   modes are shown as they are: a branch running a heuristic says so.
-3. **Валидация** — purged walk-forward, the quintile ladder, coverage and the
-   naive-rule acceptance check, all computed when the page opens.
-4. **Ручная проверка** — the original nine features for manual entry, with
-   the uncalibrated thresholds labelled as such, and a button that computes
-   the same nine from a pyramid organiser's real cash flow.
-5. **Очередь аналитика** — the end product rather than a part of it: the
-   cases the pipeline put on somebody's desk, the threshold they were cut
-   by, and the price of that threshold in reviews per catch. Reads
-   `artifacts/analyst_queue.json`; if no run has happened yet it says so
-   instead of failing.
-
-Three things the interface deliberately does not do, each a defect that was
-removed rather than a precaution: draw a graph built from the features it
-claims to support, draw a structure derived from the verdict, or report a
-metric computed on a grouping the detector was handed in advance.
-`tests/unit/test_scanner_architecture.py` parses every page and fails if any
-of them comes back.
-
-The dossier and manual pages need the API running. `scripts/run_demo.py`
-does this for you; by hand it is:
-
-```powershell
-python -m uvicorn apris.api.main:app --port 8000
-streamlit run app.py
-```
-
-Every page is rendered end to end by `tests/smoke/test_pages_render.py`, and
-that test fails if a page file exists without a line in its list — a screen
-nobody opens is how an interface rots behind a moving core.
+Three things, each a defect that was removed rather than a precaution: draw a
+graph built from the features it claims to support, draw a structure derived
+from the verdict, or report a metric computed on a grouping the detector was
+handed in advance. `tests/unit/test_site.py` checks that the page asks the
+network for nothing, that a missing run is called a missing run rather than
+drawn as a zero, and that every number on it came from an artifact.
 
 ## Case-Level Baseline
 

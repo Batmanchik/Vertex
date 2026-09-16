@@ -31,12 +31,20 @@ def test_the_page_builds_and_carries_every_section() -> None:
 
 
 def test_the_page_asks_the_network_for_nothing() -> None:
-    """Иначе на чужом ноутбуке без интернета витрина повиснет на шрифтах."""
+    """Иначе на чужом ноутбуке без интернета витрина повиснет на шрифтах.
+
+    Единственная разрешённая ссылка — значок вкладки, и он тоже внутри
+    страницы: ``data:``. Без него браузер просит ``/favicon.ico`` и получает
+    404 при каждом открытии.
+    """
     page = build()
-    assert "http://" not in page.replace("http://127.0.0.1", "")
+    assert "http://" not in page.replace("http://127.0.0.1", "").replace(
+        "http://www.w3.org/2000/svg", ""
+    )
     assert "https://" not in page
-    assert "<link" not in page
     assert "src='http" not in page and 'src="http' not in page
+    for link in re.findall(r"<link[^>]*>", page):
+        assert 'href="data:' in link, f"внешняя ссылка на странице: {link}"
 
 
 def test_numbers_come_from_the_artifacts_rather_than_the_markup() -> None:

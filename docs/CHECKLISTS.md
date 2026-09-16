@@ -9,7 +9,7 @@
 # I. Перед выпуском
 
 ## Pre-release Quality Gates
-- `python -m ruff check src tests pages app.py`
+- `python scripts/check_all.py`  # все шесть гейтов одной командой
 - `python -m mypy`
 - `python -m pytest --cov=src/apris`
 - `python -m bandit -q -r src/apris -x src/apris/crypto_ponzi -s B101`
@@ -27,13 +27,14 @@
 - `docker compose up -d --build`
 - `docker compose ps`
 - `curl http://127.0.0.1:8000/api/v1/health`
-- `curl http://127.0.0.1:8501/_stcore/health`
+- `curl -s http://127.0.0.1:8000/ | head -c 200`  # сайт отдаётся тем же процессом
 - `docker compose down -v`
 
 ## User Scenario Smoke
-- Scanner batch run (synthetic mode)
-- Scanner API-down path shows actionable message and retry button
-- Dashboard opens and displays risk rows
+- `python scripts/serve.py` поднимает сайт на 127.0.0.1:8000
+- разделы «Поиск сетей», «Досье кандидата», «Валидация» показывают числа, а не «прогона нет»
+- форма «Проверить руками» возвращает оценку
+- `python scripts/make_site.py`, файл открывается двойным щелчком без сервера
 - Manual check page scores a case and renders explanation
 - API endpoints healthy: `/api/v1/health`, `/api/v2/health/model`, `/api/v2/health/runtime`
 

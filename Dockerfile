@@ -17,7 +17,6 @@ COPY pages ./pages
 COPY scripts ./scripts
 COPY docs ./docs
 COPY app.py ./
-COPY .streamlit ./.streamlit
 
 RUN python -m pip install --upgrade pip \
     && python -m pip install .

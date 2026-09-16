@@ -30,7 +30,7 @@ PYTHON = sys.executable
 
 GATES: list[tuple[str, list[str], bool]] = [
     # name, command, is_slow
-    ("Ruff", [PYTHON, "-m", "ruff", "check", "src", "tests", "pages", "app.py"], False),
+    ("Ruff", [PYTHON, "-m", "ruff", "check", "src", "tests", "scripts"], False),
     ("Mypy", [PYTHON, "-m", "mypy"], False),
     ("Import Linter", [PYTHON, "-m", "importlinter.cli"], False),
     ("Bandit", [PYTHON, "-m", "bandit", "-q", "-r", "src/apris",

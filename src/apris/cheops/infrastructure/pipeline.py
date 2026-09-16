@@ -56,7 +56,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -119,6 +119,10 @@ class QueueItem:
     #: has to report what it caught; nothing upstream of the cut reads it,
     #: and a real deployment simply has this field empty.
     truth: int
+    #: Признаки, по которым дело получило свою оценку. Лежат в артефакте,
+    #: чтобы витрина показывала досье кандидата из файла прогона, а не
+    #: пересчитывала мир ради одной карточки.
+    features: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -300,6 +304,7 @@ def build_queue(
                 first_seen=min(stamps).isoformat() if stamps else "",
                 last_seen=max(stamps).isoformat() if stamps else "",
                 truth=int(row.label),
+                features={name: float(value) for name, value in sorted(row.features.items())},
             )
         )
 

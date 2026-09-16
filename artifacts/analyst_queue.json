@@ -1,6 +1,6 @@
 {
   "detector": "forest-v1",
-  "generated_at": "2026-09-16T17:31:09+00:00",
+  "generated_at": "2026-09-16T18:02:55+00:00",
   "outcomes": [
     {
       "block_positives": 7,
@@ -11,6 +11,23 @@
         {
           "amount_total": 137622644.7599998,
           "events": 3489,
+          "features": {
+            "active_day_share": 0.49146721077745215,
+            "amount_cv_norm": 0.489211500127833,
+            "burst_ratio_90s": 0.14210194634812673,
+            "cash_out_share": 0.5148124013378415,
+            "counterparty_concentration": 0.4625529475265573,
+            "event_rate_hour": 0.10639700030884176,
+            "graph_density": 0.0016824471861104488,
+            "graph_fanout_share": 0.12312507327228057,
+            "graph_hub_share": 0.09377553521447093,
+            "graph_relay_share": 0.09282512338197003,
+            "graph_weight_cv_norm": 0.7833492116837792,
+            "median_delta_inverse": 0.10143880496232217,
+            "median_hold_hours_inverse": 0.20660984891317685,
+            "out_in_ratio": 0.8145639599075534,
+            "unique_sender_ratio": 0.28276604312130055
+          },
           "first_seen": "2026-01-01T13:23:08",
           "key": "CAND00038",
           "last_seen": "2026-05-26T02:15:49.252275",
@@ -23,6 +40,23 @@
         {
           "amount_total": 189249967.1200003,
           "events": 6389,
+          "features": {
+            "active_day_share": 0.47523824377827467,
+            "amount_cv_norm": 0.5235288794537196,
+            "burst_ratio_90s": 0.091348738894389,
+            "cash_out_share": 0.46132669661542697,
+            "counterparty_concentration": 0.41592492546742904,
+            "event_rate_hour": 0.07055356917341037,
+            "graph_density": 0.0015837010918591551,
+            "graph_fanout_share": 0.08523885052921243,
+            "graph_hub_share": 0.06643926728942189,
+            "graph_relay_share": 0.06618958185634596,
+            "graph_weight_cv_norm": 0.7232963748711553,
+            "median_delta_inverse": 0.07228859755362486,
+            "median_hold_hours_inverse": 0.14568229993284612,
+            "out_in_ratio": 0.8424174816719835,
+            "unique_sender_ratio": 0.2248193590708447
+          },
           "first_seen": "2026-01-01T09:00:03",
           "key": "CAND00013",
           "last_seen": "2026-05-24T02:45:20.597676",
@@ -35,6 +69,23 @@
         {
           "amount_total": 336676161.9699993,
           "events": 12541,
+          "features": {
+            "active_day_share": 0.5619390191861561,
+            "amount_cv_norm": 0.43679557976004985,
+            "burst_ratio_90s": 0.09930096168333293,
+            "cash_out_share": 0.42637252793289543,
+            "counterparty_concentration": 0.45341232559296163,
+            "event_rate_hour": 0.08522680825624107,
+            "graph_density": 0.0018307565186858818,
+            "graph_fanout_share": 0.028474235104456947,
+            "graph_hub_share": 0.01452650084099449,
+            "graph_relay_share": 0.0,
+            "graph_weight_cv_norm": 0.7720859770038854,
+            "median_delta_inverse": 0.11837207465050119,
+            "median_hold_hours_inverse": 0.3096699870004082,
+            "out_in_ratio": 0.8937242977663289,
+            "unique_sender_ratio": 0.289340025320978
+          },
           "first_seen": "2026-01-01T08:34:02",
           "key": "CAND00093",
           "last_seen": "2026-05-28T03:13:21.634424",
@@ -50,7 +101,7 @@
       "recall": 0.42857142857142855,
       "reviews_per_catch": 1.0,
       "target_recall": 0.8,
-      "threshold": 0.7315633330498831,
+      "threshold": 0.731563333049883,
       "unit": "сети",
       "unit_ceiling": 1.0
     },
@@ -63,6 +114,18 @@
         {
           "amount_total": 2109518.07,
           "events": 30,
+          "features": {
+            "active_day_share": 0.1810344827586207,
+            "amount_cv_norm": 0.6428409372037772,
+            "burst_ratio_90s": 0.03333333333333333,
+            "cash_out_share": 0.6418209129696365,
+            "counterparty_concentration": 0.5231427789880904,
+            "event_rate_hour": 0.0009104733516960873,
+            "median_delta_inverse": 0.005750830553534869,
+            "median_hold_hours_inverse": 0.02002585370054494,
+            "out_in_ratio": 0.8303012253499278,
+            "unique_sender_ratio": 0.1
+          },
           "first_seen": "2026-01-07T16:57:26.862456",
           "key": "MUL00225",
           "last_seen": "2026-05-02T00:16:54.921361",
@@ -75,6 +138,18 @@
         {
           "amount_total": 1473345.78,
           "events": 30,
+          "features": {
+            "active_day_share": 0.16101694915254236,
+            "amount_cv_norm": 0.6074953074295523,
+            "burst_ratio_90s": 0.03333333333333333,
+            "cash_out_share": 0.5735270558607574,
+            "counterparty_concentration": 0.4674135358765298,
+            "event_rate_hour": 0.0008913646535382389,
+            "median_delta_inverse": 0.006898253970853974,
+            "median_hold_hours_inverse": 0.014779683918208554,
+            "out_in_ratio": 0.8049113968313443,
+            "unique_sender_ratio": 0.1
+          },
           "first_seen": "2026-01-05T19:28:12.834005",
           "key": "MUL00114",
           "last_seen": "2026-05-02T13:39:30.654182",
@@ -87,6 +162,18 @@
         {
           "amount_total": 2790556.89,
           "events": 34,
+          "features": {
+            "active_day_share": 0.29,
+            "amount_cv_norm": 0.7007376278976714,
+            "burst_ratio_90s": 0.029411764705882353,
+            "cash_out_share": 0.6657147534773974,
+            "counterparty_concentration": 0.6278465724889544,
+            "event_rate_hour": 0.001189372934356505,
+            "median_delta_inverse": 0.004371000589879381,
+            "median_hold_hours_inverse": 0.014031088083135891,
+            "out_in_ratio": 0.8820118111992375,
+            "unique_sender_ratio": 0.08823529411764706
+          },
           "first_seen": "2026-01-26T09:44:00",
           "key": "MUL00290",
           "last_seen": "2026-05-05T13:06:27.632034",
@@ -99,6 +186,18 @@
         {
           "amount_total": 1605536.26,
           "events": 18,
+          "features": {
+            "active_day_share": 0.9333333333333333,
+            "amount_cv_norm": 0.709218860894262,
+            "burst_ratio_90s": 0.05555555555555555,
+            "cash_out_share": 0.6381338847850909,
+            "counterparty_concentration": 0.5336402094512117,
+            "event_rate_hour": 0.004602949803817964,
+            "median_delta_inverse": 0.004795249779789512,
+            "median_hold_hours_inverse": 0.006249547486834288,
+            "out_in_ratio": 0.7363857588176689,
+            "unique_sender_ratio": 0.1111111111111111
+          },
           "first_seen": "2026-04-19T14:43:03.412415",
           "key": "MUL00145",
           "last_seen": "2026-05-03T03:05:44.152843",
@@ -111,6 +210,18 @@
         {
           "amount_total": 1525682.38,
           "events": 31,
+          "features": {
+            "active_day_share": 0.23809523809523808,
+            "amount_cv_norm": 0.6262075337220633,
+            "burst_ratio_90s": 0.03225806451612903,
+            "cash_out_share": 0.6995498822744739,
+            "counterparty_concentration": 0.4738279802986308,
+            "event_rate_hour": 0.0010345025835620382,
+            "median_delta_inverse": 0.0037063898185711874,
+            "median_hold_hours_inverse": 0.012258424792459525,
+            "out_in_ratio": 0.8130192853434409,
+            "unique_sender_ratio": 0.0967741935483871
+          },
           "first_seen": "2026-01-19T14:12:19",
           "key": "MUL00163",
           "last_seen": "2026-05-03T12:47:46.717953",
@@ -123,6 +234,18 @@
         {
           "amount_total": 1823426.9400000002,
           "events": 37,
+          "features": {
+            "active_day_share": 0.21311475409836064,
+            "amount_cv_norm": 0.5865035044543313,
+            "burst_ratio_90s": 0.02702702702702703,
+            "cash_out_share": 0.5252883037107969,
+            "counterparty_concentration": 0.2813054232571679,
+            "event_rate_hour": 0.0010660412817097746,
+            "median_delta_inverse": 0.0036511574617219544,
+            "median_hold_hours_inverse": 0.01056376580357991,
+            "out_in_ratio": 0.8145726420644144,
+            "unique_sender_ratio": 0.08108108108108109
+          },
           "first_seen": "2026-01-02T18:16:00.018574",
           "key": "MUL00244",
           "last_seen": "2026-05-03T03:30:14.765472",
@@ -135,6 +258,18 @@
         {
           "amount_total": 1692779.0799999994,
           "events": 31,
+          "features": {
+            "active_day_share": 0.19834710743801653,
+            "amount_cv_norm": 0.6751873826224601,
+            "burst_ratio_90s": 0.03225806451612903,
+            "cash_out_share": 0.6997352697548018,
+            "counterparty_concentration": 0.5870562550397745,
+            "event_rate_hour": 0.0008998231196588771,
+            "median_delta_inverse": 0.003681808570576095,
+            "median_hold_hours_inverse": 0.012571074193375843,
+            "out_in_ratio": 0.8602099353295433,
+            "unique_sender_ratio": 0.0967741935483871
+          },
           "first_seen": "2026-01-05T19:32:38.829242",
           "key": "MUL00118",
           "last_seen": "2026-05-05T07:53:43.410145",
@@ -147,6 +282,18 @@
         {
           "amount_total": 1676839.0800000003,
           "events": 39,
+          "features": {
+            "active_day_share": 0.29411764705882354,
+            "amount_cv_norm": 0.594134401032392,
+            "burst_ratio_90s": 0.05128205128205128,
+            "cash_out_share": 0.5076145489800508,
+            "counterparty_concentration": 0.171405596992259,
+            "event_rate_hour": 0.001334635949339731,
+            "median_delta_inverse": 0.004629250729505596,
+            "median_hold_hours_inverse": 0.010313229886844686,
+            "out_in_ratio": 0.7061844284588349,
+            "unique_sender_ratio": 0.07692307692307693
+          },
           "first_seen": "2026-01-26T13:00:12",
           "key": "MUL00172",
           "last_seen": "2026-05-07T20:52:27.525574",
@@ -159,6 +306,18 @@
         {
           "amount_total": 1377937.7200000007,
           "events": 36,
+          "features": {
+            "active_day_share": 0.224,
+            "amount_cv_norm": 0.5694071038884548,
+            "burst_ratio_90s": 0.027777777777777776,
+            "cash_out_share": 0.43129388601448104,
+            "counterparty_concentration": 0.16945306009381148,
+            "event_rate_hour": 0.001005608642470333,
+            "median_delta_inverse": 0.004291695463195189,
+            "median_hold_hours_inverse": 0.012335891837301804,
+            "out_in_ratio": 0.7744835681382971,
+            "unique_sender_ratio": 0.08333333333333333
+          },
           "first_seen": "2026-01-02T18:18:05.728803",
           "key": "MUL00262",
           "last_seen": "2026-05-06T22:34:10.229503",
@@ -171,6 +330,18 @@
         {
           "amount_total": 3062097.250000001,
           "events": 54,
+          "features": {
+            "active_day_share": 0.37254901960784315,
+            "amount_cv_norm": 0.7181628215908704,
+            "burst_ratio_90s": 0.018518518518518517,
+            "cash_out_share": 0.5993925549713788,
+            "counterparty_concentration": 0.5158623203615474,
+            "event_rate_hour": 0.001863117195224347,
+            "median_delta_inverse": 0.005414059393696102,
+            "median_hold_hours_inverse": 0.008124286147821638,
+            "out_in_ratio": 0.8714872606065187,
+            "unique_sender_ratio": 0.05555555555555555
+          },
           "first_seen": "2026-01-26T15:28:21",
           "key": "MUL00183",
           "last_seen": "2026-05-07T02:16:46.193342",
@@ -183,6 +354,18 @@
         {
           "amount_total": 2671024.94,
           "events": 51,
+          "features": {
+            "active_day_share": 0.25,
+            "amount_cv_norm": 0.6318991207960156,
+            "burst_ratio_90s": 0.0196078431372549,
+            "cash_out_share": 0.4501171556873406,
+            "counterparty_concentration": 0.17313737164176674,
+            "event_rate_hour": 0.0014417949160402629,
+            "median_delta_inverse": 0.005474554560864209,
+            "median_hold_hours_inverse": 0.009201645350006336,
+            "out_in_ratio": 0.5717625508289933,
+            "unique_sender_ratio": 0.0784313725490196
+          },
           "first_seen": "2026-01-02T14:43:27",
           "key": "MUL00359",
           "last_seen": "2026-05-05T06:11:19.749220",
@@ -195,18 +378,42 @@
         {
           "amount_total": 1591098.7500000002,
           "events": 29,
+          "features": {
+            "active_day_share": 0.2,
+            "amount_cv_norm": 0.6260731360636121,
+            "burst_ratio_90s": 0.034482758620689655,
+            "cash_out_share": 0.13833037432125414,
+            "counterparty_concentration": 0.5036225039183695,
+            "event_rate_hour": 0.0008490170024907153,
+            "median_delta_inverse": 0.004475648557500933,
+            "median_hold_hours_inverse": 0.017922926933365183,
+            "out_in_ratio": 0.7909410906998523,
+            "unique_sender_ratio": 0.10344827586206896
+          },
           "first_seen": "2026-01-05T19:36:33.367059",
           "key": "MUL00123",
           "last_seen": "2026-05-04T07:37:17.976033",
           "members": 1,
           "rank": 12,
-          "score": 0.9834305586269597,
+          "score": 0.9834305586269596,
           "truth": 1,
           "unit": "счета"
         },
         {
           "amount_total": 4924809.299999997,
           "events": 68,
+          "features": {
+            "active_day_share": 0.425,
+            "amount_cv_norm": 0.7546653765305932,
+            "burst_ratio_90s": 0.014705882352941176,
+            "cash_out_share": 0.6751583498212211,
+            "counterparty_concentration": 0.5601031803859112,
+            "event_rate_hour": 0.0019926869185735024,
+            "median_delta_inverse": 0.004878834743047733,
+            "median_hold_hours_inverse": 0.006426055403244522,
+            "out_in_ratio": 0.8462155094001051,
+            "unique_sender_ratio": 0.04411764705882353
+          },
           "first_seen": "2026-01-05T19:38:29.848921",
           "key": "MUL00127",
           "last_seen": "2026-05-04T01:42:23.441652",
@@ -219,6 +426,18 @@
         {
           "amount_total": 1803753.5899999999,
           "events": 47,
+          "features": {
+            "active_day_share": 0.2773109243697479,
+            "amount_cv_norm": 0.6174377820096699,
+            "burst_ratio_90s": 0.02127659574468085,
+            "cash_out_share": 0.3848764529583792,
+            "counterparty_concentration": 0.21550506778518078,
+            "event_rate_hour": 0.0013851357945270123,
+            "median_delta_inverse": 0.004960433796009189,
+            "median_hold_hours_inverse": 0.009598955942667022,
+            "out_in_ratio": 0.7587672434657697,
+            "unique_sender_ratio": 0.06382978723404255
+          },
           "first_seen": "2026-01-08T13:46:52",
           "key": "MUL00164",
           "last_seen": "2026-05-06T05:30:19.349180",
@@ -231,6 +450,18 @@
         {
           "amount_total": 1876596.9800000004,
           "events": 51,
+          "features": {
+            "active_day_share": 0.33884297520661155,
+            "amount_cv_norm": 0.6241810534031463,
+            "burst_ratio_90s": 0.0196078431372549,
+            "cash_out_share": 0.4451785787232281,
+            "counterparty_concentration": 0.22500216607999862,
+            "event_rate_hour": 0.001476720999461761,
+            "median_delta_inverse": 0.00369395067414402,
+            "median_hold_hours_inverse": 0.006971231748849371,
+            "out_in_ratio": 0.8419205056610928,
+            "unique_sender_ratio": 0.058823529411764705
+          },
           "first_seen": "2026-01-06T12:01:33",
           "key": "MUL00284",
           "last_seen": "2026-05-06T05:46:25.597638",
@@ -243,6 +474,18 @@
         {
           "amount_total": 2650481.3899999997,
           "events": 45,
+          "features": {
+            "active_day_share": 0.28695652173913044,
+            "amount_cv_norm": 0.6551755109965868,
+            "burst_ratio_90s": 0.022222222222222223,
+            "cash_out_share": 0.5409646256158125,
+            "counterparty_concentration": 0.3985261072199261,
+            "event_rate_hour": 0.0013685026029112187,
+            "median_delta_inverse": 0.004538702302823716,
+            "median_hold_hours_inverse": 0.007511504750006008,
+            "out_in_ratio": 0.8001447352337975,
+            "unique_sender_ratio": 0.06666666666666667
+          },
           "first_seen": "2026-01-14T16:03:17",
           "key": "MUL00338",
           "last_seen": "2026-05-08T16:31:33.728396",
@@ -255,6 +498,18 @@
         {
           "amount_total": 2064502.7500000002,
           "events": 46,
+          "features": {
+            "active_day_share": 0.2956521739130435,
+            "amount_cv_norm": 0.6599171745840242,
+            "burst_ratio_90s": 0.021739130434782608,
+            "cash_out_share": 0.5724038552330276,
+            "counterparty_concentration": 0.40468889026090127,
+            "event_rate_hour": 0.0013995464146482318,
+            "median_delta_inverse": 0.004099903456222798,
+            "median_hold_hours_inverse": 0.009230053207640304,
+            "out_in_ratio": 0.7843654410819304,
+            "unique_sender_ratio": 0.06521739130434782
+          },
           "first_seen": "2026-01-08T12:33:19",
           "key": "MUL00014",
           "last_seen": "2026-05-02T11:42:16.503325",
@@ -267,6 +522,18 @@
         {
           "amount_total": 2010323.51,
           "events": 46,
+          "features": {
+            "active_day_share": 0.32727272727272727,
+            "amount_cv_norm": 0.615587002389113,
+            "burst_ratio_90s": 0.021739130434782608,
+            "cash_out_share": 0.5013785011734199,
+            "counterparty_concentration": 0.25344850808930436,
+            "event_rate_hour": 0.0014645364620809985,
+            "median_delta_inverse": 0.004417514024106839,
+            "median_hold_hours_inverse": 0.007707671624349084,
+            "out_in_ratio": 0.8217495998890018,
+            "unique_sender_ratio": 0.06521739130434782
+          },
           "first_seen": "2026-01-19T16:32:41",
           "key": "MUL00192",
           "last_seen": "2026-05-08T14:08:57.665042",
@@ -279,6 +546,18 @@
         {
           "amount_total": 1958767.5899999999,
           "events": 52,
+          "features": {
+            "active_day_share": 0.3611111111111111,
+            "amount_cv_norm": 0.6377252333093987,
+            "burst_ratio_90s": 0.019230769230769232,
+            "cash_out_share": 0.39316618849188295,
+            "counterparty_concentration": 0.1611557520003717,
+            "event_rate_hour": 0.0016921050731728774,
+            "median_delta_inverse": 0.004063477274785399,
+            "median_hold_hours_inverse": 0.009712432085924564,
+            "out_in_ratio": 0.7310175120752134,
+            "unique_sender_ratio": 0.057692307692307696
+          },
           "first_seen": "2026-01-21T14:59:07",
           "key": "MUL00357",
           "last_seen": "2026-05-08T03:33:52.638538",
@@ -291,6 +570,18 @@
         {
           "amount_total": 2437115.0700000008,
           "events": 57,
+          "features": {
+            "active_day_share": 0.3805309734513274,
+            "amount_cv_norm": 0.6533760171221562,
+            "burst_ratio_90s": 0.017543859649122806,
+            "cash_out_share": 0.3736216873348331,
+            "counterparty_concentration": 0.2741173534274105,
+            "event_rate_hour": 0.0017620052236950537,
+            "median_delta_inverse": 0.003858121672249526,
+            "median_hold_hours_inverse": 0.007054293450279404,
+            "out_in_ratio": 0.7954684413102266,
+            "unique_sender_ratio": 0.05263157894736842
+          },
           "first_seen": "2026-01-16T12:56:36",
           "key": "MUL00311",
           "last_seen": "2026-05-08T15:59:08.045864",
@@ -303,18 +594,42 @@
         {
           "amount_total": 1742011.03,
           "events": 43,
+          "features": {
+            "active_day_share": 0.2956521739130435,
+            "amount_cv_norm": 0.6075556521964128,
+            "burst_ratio_90s": 0.046511627906976744,
+            "cash_out_share": 0.31528628066785214,
+            "counterparty_concentration": 0.15433176146374633,
+            "event_rate_hour": 0.0013139883125754686,
+            "median_delta_inverse": 0.0039951087579626066,
+            "median_hold_hours_inverse": 0.010985691494237549,
+            "out_in_ratio": 0.7314022952862077,
+            "unique_sender_ratio": 0.06976744186046512
+          },
           "first_seen": "2026-01-09T15:07:40",
           "key": "MUL00029",
           "last_seen": "2026-05-03T02:36:38.919769",
           "members": 1,
           "rank": 21,
-          "score": 0.9463821733821733,
+          "score": 0.9463821733821731,
           "truth": 1,
           "unit": "счета"
         },
         {
           "amount_total": 1677844.1000000003,
           "events": 40,
+          "features": {
+            "active_day_share": 0.2809917355371901,
+            "amount_cv_norm": 0.5834313760274668,
+            "burst_ratio_90s": 0.025,
+            "cash_out_share": 0.33747271692170755,
+            "counterparty_concentration": 0.17018819427143916,
+            "event_rate_hour": 0.0011575802056856546,
+            "median_delta_inverse": 0.003683693913685615,
+            "median_hold_hours_inverse": 0.00968438256416513,
+            "out_in_ratio": 0.7996392385565909,
+            "unique_sender_ratio": 0.075
+          },
           "first_seen": "2026-01-03T14:19:42",
           "key": "MUL00370",
           "last_seen": "2026-05-03T10:33:54.312384",
@@ -327,6 +642,18 @@
         {
           "amount_total": 1943015.2400000002,
           "events": 47,
+          "features": {
+            "active_day_share": 0.297029702970297,
+            "amount_cv_norm": 0.6485653012396925,
+            "burst_ratio_90s": 0.02127659574468085,
+            "cash_out_share": 0.35469631148828656,
+            "counterparty_concentration": 0.27995926850181996,
+            "event_rate_hour": 0.001622683557232518,
+            "median_delta_inverse": 0.006564304952119682,
+            "median_hold_hours_inverse": 0.01255672763738137,
+            "out_in_ratio": 0.7473276012025007,
+            "unique_sender_ratio": 0.06382978723404255
+          },
           "first_seen": "2026-01-24T12:37:18",
           "key": "MUL00134",
           "last_seen": "2026-05-04T22:24:07.716090",
@@ -339,6 +666,18 @@
         {
           "amount_total": 1927017.5099999993,
           "events": 50,
+          "features": {
+            "active_day_share": 0.2903225806451613,
+            "amount_cv_norm": 0.6277635682398938,
+            "burst_ratio_90s": 0.02,
+            "cash_out_share": 0.3332941270244303,
+            "counterparty_concentration": 0.1588217954826812,
+            "event_rate_hour": 0.0014144858549154106,
+            "median_delta_inverse": 0.004550699837511996,
+            "median_hold_hours_inverse": 0.010587402719731675,
+            "out_in_ratio": 0.7066819516197529,
+            "unique_sender_ratio": 0.06
+          },
           "first_seen": "2026-01-02T18:25:10.455371",
           "key": "MUL00273",
           "last_seen": "2026-05-05T07:57:50.372230",
@@ -351,6 +690,18 @@
         {
           "amount_total": 3010759.2500000005,
           "events": 65,
+          "features": {
+            "active_day_share": 0.40869565217391307,
+            "amount_cv_norm": 0.663892079030827,
+            "burst_ratio_90s": 0.015384615384615385,
+            "cash_out_share": 0.2855083587558534,
+            "counterparty_concentration": 0.15606776777322914,
+            "event_rate_hour": 0.0019729339809729184,
+            "median_delta_inverse": 0.004400313034140235,
+            "median_hold_hours_inverse": 0.007852762186269078,
+            "out_in_ratio": 0.6728401589928633,
+            "unique_sender_ratio": 0.06153846153846154
+          },
           "first_seen": "2026-01-08T16:26:13.837367",
           "key": "MUL00327",
           "last_seen": "2026-05-02T20:30:30.814569",
@@ -363,18 +714,42 @@
         {
           "amount_total": 3114669.47,
           "events": 73,
+          "features": {
+            "active_day_share": 0.5102040816326531,
+            "amount_cv_norm": 0.6739552249563079,
+            "burst_ratio_90s": 0.0136986301369863,
+            "cash_out_share": 0.3414725090933361,
+            "counterparty_concentration": 0.1991008525114038,
+            "event_rate_hour": 0.00259421747339696,
+            "median_delta_inverse": 0.004334750457478553,
+            "median_hold_hours_inverse": 0.006610318295981371,
+            "out_in_ratio": 0.815541247196673,
+            "unique_sender_ratio": 0.0410958904109589
+          },
           "first_seen": "2026-01-25T12:33:08",
           "key": "MUL00033",
           "last_seen": "2026-05-02T23:25:40.013017",
           "members": 1,
           "rank": 26,
-          "score": 0.9075853313353314,
+          "score": 0.9075853313353315,
           "truth": 1,
           "unit": "счета"
         },
         {
           "amount_total": 3527651.4499999997,
           "events": 77,
+          "features": {
+            "active_day_share": 0.4473684210526316,
+            "amount_cv_norm": 0.6838291964927348,
+            "burst_ratio_90s": 0.012987012987012988,
+            "cash_out_share": 0.3632365724141479,
+            "counterparty_concentration": 0.1263298125510388,
+            "event_rate_hour": 0.002369683035094939,
+            "median_delta_inverse": 0.005458753548271189,
+            "median_hold_hours_inverse": 0.005566616641152305,
+            "out_in_ratio": 0.7724835805728303,
+            "unique_sender_ratio": 0.03896103896103896
+          },
           "first_seen": "2026-01-12T17:38:01",
           "key": "MUL00316",
           "last_seen": "2026-05-05T07:02:00.163715",
@@ -387,6 +762,18 @@
         {
           "amount_total": 3155101.6700000013,
           "events": 38,
+          "features": {
+            "active_day_share": 0.8387096774193549,
+            "amount_cv_norm": 0.7790576976030221,
+            "burst_ratio_90s": 0.02631578947368421,
+            "cash_out_share": 0.7243653748488392,
+            "counterparty_concentration": 0.5801566439764743,
+            "event_rate_hour": 0.004455064376811163,
+            "median_delta_inverse": 0.005253151412142887,
+            "median_hold_hours_inverse": 0.0027357472671053324,
+            "out_in_ratio": 0.9025303368736588,
+            "unique_sender_ratio": 0.05263157894736842
+          },
           "first_seen": "2026-04-26T16:47:07.786676",
           "key": "MUL00039",
           "last_seen": "2026-05-26T04:25:13.368518",
@@ -399,6 +786,18 @@
         {
           "amount_total": 2234070.5800000005,
           "events": 54,
+          "features": {
+            "active_day_share": 0.3389830508474576,
+            "amount_cv_norm": 0.6335600757551235,
+            "burst_ratio_90s": 0.018518518518518517,
+            "cash_out_share": 0.3589096633037582,
+            "counterparty_concentration": 0.21690924230994052,
+            "event_rate_hour": 0.001602628814168389,
+            "median_delta_inverse": 0.0044623334137015025,
+            "median_hold_hours_inverse": 0.008010670146769988,
+            "out_in_ratio": 0.8146091713217082,
+            "unique_sender_ratio": 0.05555555555555555
+          },
           "first_seen": "2026-01-07T17:01:22.728197",
           "key": "MUL00207",
           "last_seen": "2026-05-04T12:24:34.550920",
@@ -411,6 +810,18 @@
         {
           "amount_total": 2232326.769999999,
           "events": 44,
+          "features": {
+            "active_day_share": 0.2627118644067797,
+            "amount_cv_norm": 0.6221503917383492,
+            "burst_ratio_90s": 0.022727272727272728,
+            "cash_out_share": 0.15592136061075634,
+            "counterparty_concentration": 0.303774434744878,
+            "event_rate_hour": 0.0012993879736226835,
+            "median_delta_inverse": 0.00529625690102109,
+            "median_hold_hours_inverse": 0.010881396321252313,
+            "out_in_ratio": 0.7988185506597253,
+            "unique_sender_ratio": 0.06818181818181818
+          },
           "first_seen": "2026-01-07T09:14:48",
           "key": "MUL00213",
           "last_seen": "2026-05-04T19:25:16.729800",
@@ -423,6 +834,18 @@
         {
           "amount_total": 1245726.9999999998,
           "events": 35,
+          "features": {
+            "active_day_share": 0.23684210526315788,
+            "amount_cv_norm": 0.5817705343897831,
+            "burst_ratio_90s": 0.02857142857142857,
+            "cash_out_share": 0.2141761971487192,
+            "counterparty_concentration": 0.0969966714687778,
+            "event_rate_hour": 0.0010754764213431875,
+            "median_delta_inverse": 0.004067790172581298,
+            "median_hold_hours_inverse": 0.011239184043763343,
+            "out_in_ratio": 0.7628068745062954,
+            "unique_sender_ratio": 0.08571428571428572
+          },
           "first_seen": "2026-01-12T13:09:42",
           "key": "MUL00195",
           "last_seen": "2026-05-05T10:13:17.017330",
@@ -435,18 +858,42 @@
         {
           "amount_total": 2618900.32,
           "events": 46,
+          "features": {
+            "active_day_share": 0.29357798165137616,
+            "amount_cv_norm": 0.6541391019471097,
+            "burst_ratio_90s": 0.021739130434782608,
+            "cash_out_share": 0.2574411603393295,
+            "counterparty_concentration": 0.308169107547004,
+            "event_rate_hour": 0.0014741385940292135,
+            "median_delta_inverse": 0.004993961583396045,
+            "median_hold_hours_inverse": 0.010159017865541868,
+            "out_in_ratio": 0.5091093833798483,
+            "unique_sender_ratio": 0.08695652173913043
+          },
           "first_seen": "2026-01-15T13:57:17",
           "key": "MUL00363",
           "last_seen": "2026-05-03T18:30:36.298475",
           "members": 1,
           "rank": 32,
-          "score": 0.8489631340881342,
+          "score": 0.848963134088134,
           "truth": 1,
           "unit": "счета"
         },
         {
           "amount_total": 4449925.449999998,
           "events": 72,
+          "features": {
+            "active_day_share": 0.40458015267175573,
+            "amount_cv_norm": 0.7138490242177388,
+            "burst_ratio_90s": 0.013888888888888888,
+            "cash_out_share": 0.5710878729601229,
+            "counterparty_concentration": 0.3962074883635318,
+            "event_rate_hour": 0.0019173424131038034,
+            "median_delta_inverse": 0.003997864343577295,
+            "median_hold_hours_inverse": 0.005515322544948295,
+            "out_in_ratio": 0.7793863348733471,
+            "unique_sender_ratio": 0.041666666666666664
+          },
           "first_seen": "2026-01-02T16:34:51",
           "key": "MUL00217",
           "last_seen": "2026-05-12T19:54:44.381953",
@@ -459,18 +906,42 @@
         {
           "amount_total": 2322685.68,
           "events": 69,
+          "features": {
+            "active_day_share": 0.3247863247863248,
+            "amount_cv_norm": 0.6576421974943367,
+            "burst_ratio_90s": 0.014492753623188406,
+            "cash_out_share": 0.29403492804589076,
+            "counterparty_concentration": 0.08624378700683419,
+            "event_rate_hour": 0.0020607081496771744,
+            "median_delta_inverse": 0.008351350368431265,
+            "median_hold_hours_inverse": 0.008116941221495881,
+            "out_in_ratio": 0.770541539556457,
+            "unique_sender_ratio": 0.057971014492753624
+          },
           "first_seen": "2026-01-09T12:02:37",
           "key": "MUL00281",
           "last_seen": "2026-05-05T12:35:47.569105",
           "members": 1,
           "rank": 34,
-          "score": 0.829600308543132,
+          "score": 0.8296003085431319,
           "truth": 1,
           "unit": "счета"
         },
         {
           "amount_total": 3336316.5799999996,
           "events": 86,
+          "features": {
+            "active_day_share": 0.5272727272727272,
+            "amount_cv_norm": 0.6856960342304828,
+            "burst_ratio_90s": 0.011627906976744186,
+            "cash_out_share": 0.3038248755576016,
+            "counterparty_concentration": 0.1183640258534836,
+            "event_rate_hour": 0.0027315221344738727,
+            "median_delta_inverse": 0.004739611471908156,
+            "median_hold_hours_inverse": 0.0047169702479694705,
+            "out_in_ratio": 0.8563503863165415,
+            "unique_sender_ratio": 0.03488372093023256
+          },
           "first_seen": "2026-01-20T09:56:21",
           "key": "MUL00045",
           "last_seen": "2026-05-09T10:27:44.153442",
@@ -483,6 +954,18 @@
         {
           "amount_total": 3604087.5500000003,
           "events": 87,
+          "features": {
+            "active_day_share": 0.5700934579439252,
+            "amount_cv_norm": 0.7058760172821343,
+            "burst_ratio_90s": 0.022988505747126436,
+            "cash_out_share": 0.36841178932944496,
+            "counterparty_concentration": 0.1427987500083473,
+            "event_rate_hour": 0.0028320500135943314,
+            "median_delta_inverse": 0.0052913390613864575,
+            "median_hold_hours_inverse": 0.005567855581156142,
+            "out_in_ratio": 0.6928119520893247,
+            "unique_sender_ratio": 0.034482758620689655
+          },
           "first_seen": "2026-01-22T11:57:57",
           "key": "MUL00027",
           "last_seen": "2026-05-08T20:41:55.939890",
@@ -495,18 +978,42 @@
         {
           "amount_total": 6472754.680000002,
           "events": 130,
+          "features": {
+            "active_day_share": 0.7016129032258065,
+            "amount_cv_norm": 0.7379069299150793,
+            "burst_ratio_90s": 0.015384615384615385,
+            "cash_out_share": 0.39438768125742363,
+            "counterparty_concentration": 0.18505695790760945,
+            "event_rate_hour": 0.003658481159726688,
+            "median_delta_inverse": 0.005170331107441251,
+            "median_hold_hours_inverse": 0.004333908265889968,
+            "out_in_ratio": 0.6862110870911068,
+            "unique_sender_ratio": 0.03076923076923077
+          },
           "first_seen": "2026-01-05T09:19:54",
           "key": "MUL00026",
           "last_seen": "2026-05-08T07:39:15.497979",
           "members": 1,
           "rank": 37,
-          "score": 0.8056605902267667,
+          "score": 0.8056605902267665,
           "truth": 1,
           "unit": "счета"
         },
         {
           "amount_total": 2569511.3,
           "events": 68,
+          "features": {
+            "active_day_share": 0.38461538461538464,
+            "amount_cv_norm": 0.6771527938495627,
+            "burst_ratio_90s": 0.014705882352941176,
+            "cash_out_share": 0.29828975161672167,
+            "counterparty_concentration": 0.08553453873313997,
+            "event_rate_hour": 0.0018353162736040258,
+            "median_delta_inverse": 0.004484608968722159,
+            "median_hold_hours_inverse": 0.007350575288854982,
+            "out_in_ratio": 0.7049333893516003,
+            "unique_sender_ratio": 0.04411764705882353
+          },
           "first_seen": "2026-01-02T18:23:07.703594",
           "key": "MUL00254",
           "last_seen": "2026-05-11T04:17:18.133941",
@@ -528,8 +1035,8 @@
     }
   ],
   "preset": "full",
-  "run_id": "2dd4d81a",
-  "seconds": 15.415574,
+  "run_id": "61d0a00b",
+  "seconds": 15.362553,
   "seed": 17,
   "world": {
     "accounts": 23619.0,

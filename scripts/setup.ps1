@@ -25,11 +25,8 @@
     Branch to check out. Defaults to main.
 
 .PARAMETER Port
-    Port for the interface. Defaults to 8501, and one address carries
+    Port for the site. Defaults to 8000, and one address carries
     everything: the measurements page is a page inside it.
-
-.PARAMETER WithApi
-    Also start the API on port 8000, for the scoring endpoints.
 
 .PARAMETER SkipStart
     Install everything but do not start the server.
@@ -38,8 +35,7 @@
 param(
     [string]$Path = (Join-Path $env:USERPROFILE "Vertex"),
     [string]$Branch = "main",
-    [int]$Port = 8501,
-    [switch]$WithApi,
+    [int]$Port = 8000,
     [switch]$SkipStart
 )
 
@@ -49,11 +45,10 @@ param(
 $ErrorActionPreference = "Continue"
 $RepoUrl = "https://github.com/Batmanchik/Vertex.git"
 
-# Everything the interface, the API and the ladder run need. mlflow and
+# Everything the site, the API and the ladder run need. mlflow and
 # elasticsearch are left out on purpose: nothing in this demo imports them, and
 # they are the two that most often turn a five-minute install into a failed one.
 $Packages = @(
-    "streamlit>=1.42",
     "fastapi>=0.104",
     "uvicorn[standard]>=0.24",
     "jinja2>=3.1",
@@ -431,23 +426,22 @@ if ($LASTEXITCODE -ne 0) {
 if ($SkipStart) {
     Write-Host ""
     Write-Host "Установка закончена. Запуск:"
-    Write-Host "  .venv\Scripts\python.exe -m streamlit run app.py --server.port $Port"
+    Write-Host "  .venv\Scripts\python.exe scripts\serve.py --port $Port"
     return
 }
 
 # ---------------------------------------------------------------- старт
-Write-Step "Запускаю интерфейс на порту $Port"
+Write-Step "Поднимаю сайт на порту $Port"
 
-$healthUrl = "http://127.0.0.1:$Port/_stcore/health"
+$healthUrl = "http://127.0.0.1:$Port/api/v1/health"
 $pageUrl = "http://127.0.0.1:$Port/"
 
 if (Test-HttpOk -Url $healthUrl) {
     Write-Host "на этом порту уже что-то работает, открываю страницу"
 } else {
     Start-Process -FilePath $VenvPython `
-        -ArgumentList @("-m", "streamlit", "run", "app.py",
-                        "--server.address", "127.0.0.1", "--server.port", "$Port",
-                        "--server.headless", "true") `
+        -ArgumentList @("-m", "uvicorn", "apris.api.main:app",
+                        "--host", "127.0.0.1", "--port", "$Port") `
         -WorkingDirectory $Path | Out-Null
 
     $ready = $false
@@ -456,23 +450,8 @@ if (Test-HttpOk -Url $healthUrl) {
         if (Test-HttpOk -Url $healthUrl) { $ready = $true; break }
     }
     if (-not $ready) {
-        Write-Fail "интерфейс запустился, но не отвечает. Посмотрите на второе окно, которое открылось."
+        Write-Fail "сайт запустился, но не отвечает. Посмотрите на второе окно, которое открылось."
         return
-    }
-}
-
-# API нужен только для запросов к /api/..., сама витрина без него работает.
-if ($WithApi) {
-    Write-Step "Запускаю API на порту 8000"
-    if (-not (Test-HttpOk -Url "http://127.0.0.1:8000/api/v1/health")) {
-        Start-Process -FilePath $VenvPython `
-            -ArgumentList @("-m", "uvicorn", "apris.api.main:app",
-                            "--host", "127.0.0.1", "--port", "8000") `
-            -WorkingDirectory $Path | Out-Null
-        for ($i = 0; $i -lt 40; $i++) {
-            Start-Sleep -Seconds 1
-            if (Test-HttpOk -Url "http://127.0.0.1:8000/api/v1/health") { break }
-        }
     }
 }
 
@@ -482,8 +461,9 @@ Write-Host ""
 Write-Host "Готово." -ForegroundColor Green
 Write-Host "  Адрес:          $pageUrl" -ForegroundColor White
 Write-Host "  Папка проекта:  $Path"
-if ($WithApi) { Write-Host "  API:            http://127.0.0.1:8000/" }
+Write-Host "  API там же:     $pageUrl`api/v1/health"
 Write-Host ""
-Write-Host "Всё на одном адресе: витрина измерений — первая страница в меню слева."
+Write-Host "Всё на одном адресе: измерения, разбор системы по шагам, дефекты и форма,"
+Write-Host "которая считает вживую. Отдельного интерфейса больше нет."
 Write-Host "Сервер работает во втором окне. Чтобы остановить, закройте его или нажмите там Ctrl+C."
 Write-Host "Порядок показа на защите: docs\DEFENCE.md"

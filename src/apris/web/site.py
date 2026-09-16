@@ -73,6 +73,20 @@ def thousands(value: float | int | None, dash: str = "—") -> str:
     return f"{int(value):,}".replace(",", " ")
 
 
+def money(value: float | int | None, dash: str = "—") -> str:
+    """Сумма в тенге коротко: на плашке «137 622 644 ₸» переносится и рвёт вёрстку."""
+    if value is None:
+        return dash
+    amount = float(value)
+    if amount >= 1e9:
+        return f"{amount / 1e9:.1f} млрд ₸"
+    if amount >= 1e6:
+        return f"{amount / 1e6:.1f} млн ₸"
+    if amount >= 1e3:
+        return f"{amount / 1e3:.0f} тыс ₸"
+    return f"{amount:.0f} ₸"
+
+
 def data_uri(path: Path) -> str:
     if not path.exists():
         return ""
@@ -539,6 +553,26 @@ text.s3{fill:var(--s3); stroke:none} text.s4{fill:var(--s4); stroke:none}
 .src{border-left-color:var(--grid); color:var(--muted); font-size:12.5px}
 .pair{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px}
 ul.plain{padding-left:18px; color:var(--ink2); max-width:78ch}
+
+/* живая форма */
+.form{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px; margin:18px 0; align-items:end}
+.fld{display:flex; flex-direction:column; gap:4px; font-size:13.5px; color:var(--ink2)}
+.fld input{font:inherit; font-size:14px; padding:7px 9px; border-radius:8px;
+  border:1px solid var(--ring); background:var(--plane); color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.fld input:focus{outline:2px solid var(--s1); outline-offset:1px}
+.fld small{color:var(--muted); font-size:11.5px;
+  font-family:ui-monospace,Menlo,monospace}
+.btn.go{background:var(--s1); color:#fff; border-color:transparent; padding:9px 18px;
+  font-size:14px; height:38px}
+.btn.go:hover{filter:brightness(1.08); background:var(--s1); color:#fff}
+.out{min-height:24px; font-size:14px; color:var(--ink2)}
+.out .verdict{display:flex; gap:14px; align-items:baseline; flex-wrap:wrap;
+  border:1px solid var(--ring); border-radius:11px; padding:13px 16px; background:var(--plane)}
+.out .verdict b{font-size:26px; font-variant-numeric:tabular-nums}
+.out .band{font-weight:600}
+.out .offline{color:var(--muted)}
 ul.plain li{margin:6px 0}
 .q{font-weight:600; margin:18px 0 4px}
 
@@ -577,6 +611,35 @@ SCRIPT = """
   });
   var links=[].slice.call(document.querySelectorAll('nav.rail a'));
   var map={}; links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+  var form=document.getElementById('manual'), out=document.getElementById('manual-out');
+  if(form && out){
+    var live = location.protocol === 'http:' || location.protocol === 'https:';
+    if(!live){
+      out.innerHTML = "<p class='offline'>Страница открыта файлом с диска, считать некому. "+
+        "Поднимите сервис — <code>python scripts/serve.py</code> — и откройте "+
+        "http://127.0.0.1:8000</p>";
+      form.querySelector('button').disabled = true;
+    }
+    form.addEventListener('submit', function(event){
+      event.preventDefault();
+      var payload={};
+      form.querySelectorAll('input[data-name]').forEach(function(input){
+        payload[input.dataset.name] = parseFloat(input.value);
+      });
+      out.textContent = 'считаю…';
+      fetch('/api/v1/predict', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)})
+        .then(function(r){ if(!r.ok) throw new Error('сервис ответил ' + r.status); return r.json(); })
+        .then(function(data){
+          var pct = (data.probability*100).toFixed(1);
+          out.innerHTML = "<div class='verdict'><b>" + pct + " %</b>" +
+            "<span class='band'>" + (data.label_text||'') + "</span>" +
+            "<span>пороги: " + JSON.stringify(data.threshold_values) + "</span></div>";
+        })
+        .catch(function(error){ out.innerHTML = "<p class='offline'>" + error.message + "</p>"; });
+    });
+  }
+
   var obs=new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
       var a=map[entry.target.id];
@@ -595,6 +658,8 @@ SCRIPT = """
 NAV: list[tuple[str, list[tuple[str, str]]]] = [
     ("Коротко", [("overview", "Что это такое"), ("pipeline", "Как это работает"),
                  ("world", "Мир и типологии")]),
+    ("Система по шагам", [("discovery", "Поиск сетей"), ("dossier", "Досье кандидата"),
+                          ("validation", "Валидация"), ("manual", "Проверить руками")]),
     ("Результаты", [("queue", "Очередь аналитика"), ("ladder", "Лестница миров"),
                     ("evasion", "Цена уклонения"), ("rarity", "Редкость мошенничества"),
                     ("rules", "Правила против модели"), ("ceiling", "Потолки уровней"),
@@ -1232,6 +1297,187 @@ def sec_elliptic(snap: dict[str, Any]) -> str:
     )
 
 
+FEATURE_RU = {
+    "graph_density": "плотность связей внутри дела",
+    "graph_hub_share": "схождение: доля потока в одну точку",
+    "graph_fanout_share": "расхождение: доля потока из одной точки",
+    "graph_relay_share": "транзит через посредника",
+    "graph_weight_cv_norm": "разброс сумм по рёбрам",
+    "event_rate_hour": "плотность событий во времени",
+    "burst_ratio_90s": "всплеск: события в окне 90 секунд",
+    "median_delta_inverse": "короткие паузы между переводами",
+    "amount_cv_norm": "разброс сумм переводов",
+    "unique_sender_ratio": "доля уникальных отправителей",
+    "active_day_share": "доля активных дней",
+    "cash_out_share": "доля вывода наличными",
+    "counterparty_concentration": "концентрация контрагентов",
+    "median_hold_hours_inverse": "деньги не задерживаются",
+    "out_in_ratio": "сколько ушло от того, что пришло",
+}
+
+
+def sec_discovery(snap: dict[str, Any]) -> str:
+    """Поиск сетей: что предлагает слепой поиск и какой у него потолок."""
+    blocks = snap["blocks"]
+    worlds = snap["worlds"]
+    if not blocks:
+        return section("discovery", "поиск", "Поиск сетей", "Прогона нет.", "")
+
+    nets = next((b for b in blocks if b.unit == "сети"), blocks[0])
+    coverage = [(r.key, r.account_coverage) for r in worlds if r.account_coverage is not None]
+    rows = [
+        [str(item.get("rank")), esc(str(item.get("key"))), thousands(item.get("members")),
+         thousands(item.get("events")),
+         money(item.get("amount_total")),
+         str(item.get("first_seen", ""))[:10] + " – " + str(item.get("last_seen", ""))[:10]]
+        for item in nets.items[:10]
+    ]
+    return section(
+        "discovery", "шаг 2", "Поиск сетей: кандидаты берутся из потока, а не из ответов",
+        "Самую трудную половину задачи — «какие счета вообще образуют одну структуру» — "
+        "нельзя решать за детектор. Здесь кластеры предлагает процедура, которая читает "
+        "только события: общий банкомат в узком окне, общий предок по деньгам, общий "
+        "получатель. Метки прикладываются после и нужны ровно для одной величины — покрытия.",
+        stats([
+            (thousands(nets.rows), "кандидатов в блоке", "предложено вслепую"),
+            (num(nets.ceiling, 3), "покрытие: потолок полноты",
+             "сеть, не попавшая ни в одного кандидата, не будет найдена никакой моделью"),
+            (thousands(nets.positives), "из них настоящих групп", "известно только после разметки"),
+        ])
+        + table(["№", "кандидат", "участников", "событий", "оборот", "окно"], rows,
+                caption="Кандидаты, которые поиск предложил сам — до того, как их кто-то оценил")
+        + (table(["мир", "покрытие"], [[esc(k), num(v, 3)] for k, v in coverage],
+                 caption="Покрытие держится по всем ступеням лестницы миров")
+           if coverage else "")
+        + note(
+            "Пока сборщик дел брал состав групп из файла с ответами, любая метрика после "
+            "него измеряла не детектор. Это дефект 2 из списка ниже, и покрытие — то, что "
+            "появилось на его месте."
+        )
+        + source("artifacts/analyst_queue.json", "python scripts/run_pipeline.py --preset full"),
+    )
+
+
+def sec_dossier(snap: dict[str, Any]) -> str:
+    """Досье одного кандидата: из чего сложилась его оценка."""
+    blocks = snap["blocks"]
+    nets = next((b for b in blocks if b.unit == "сети"), None)
+    item = nets.items[0] if nets and nets.items else None
+    if item is None:
+        return section("dossier", "шаг 3", "Досье кандидата", "Прогона нет.", "")
+
+    features = item.get("features") or {}
+    bars = [
+        Bar(FEATURE_RU.get(name, name), value, "s1" if value >= 0.5 else "s3", note=name)
+        for name, value in sorted(features.items(), key=lambda pair: -pair[1])
+    ]
+    truth = "мошенническая группа" if item.get("truth") else "честная группа"
+    return section(
+        "dossier", "шаг 3", "Досье кандидата: из чего сложилась оценка",
+        "Верхнее дело очереди, развёрнутое целиком. Все величины ниже посчитаны детектором "
+        "из событий этого кандидата — ни одна не пришла из генератора и ни одна не выведена "
+        "из вердикта модели. Ранняя версия интерфейса рисовала граф функцией от тех же "
+        "признаков, которые он якобы подтверждал, и потому всегда соглашалась с оценкой.",
+        stats([
+            (num(item.get("score"), 3), "оценка детектора", f"истина: {truth}"),
+            (thousands(item.get("members")), "участников", "счета, связанные поиском"),
+            (thousands(item.get("events")), "событий", "переводов внутри дела"),
+            (money(item.get("amount_total")), "оборот", "сумма всех переводов дела"),
+        ])
+        + chart_bars(bars, lo=0.0, hi=1.0, digits=3)
+        + note(
+            "Все признаки приведены к отрезку [0, 1], поэтому их можно смотреть на одной "
+            "шкале. Английские имена оставлены в подсказках: под ними эти величины лежат в "
+            "коде и в файлах прогонов."
+        )
+        + source("artifacts/analyst_queue.json"),
+    )
+
+
+def sec_validation(snap: dict[str, Any]) -> str:
+    """Валидация: как именно проверяли, и что показали фолды."""
+    panel = snap["panel"]
+    blocks = snap["blocks"]
+    rows: list[list[str]] = []
+    if panel.present and panel.worlds:
+        world = panel.worlds[0]
+        for name, title in (("time_forward", "известные кейсы"), ("case_holdout", "новые кластеры")):
+            folds = (world.protocols.get(name, {}).get("forest") or {}).get("folds", [])
+            for fold in folds:
+                rows.append([
+                    esc(title), str(fold.get("fold")), thousands(fold.get("train")),
+                    thousands(fold.get("test")), pct(fold.get("prevalence")),
+                    num(fold.get("shared_case_share"), 2), num(fold.get("roc_auc")),
+                ])
+    queue_rows = [
+        [esc(b.unit), num(b.threshold, 3), pct(b.prevalence), thousands(b.queued),
+         pct(b.precision, 0), pct(b.recall, 0), num(b.ceiling, 3)]
+        for b in blocks
+    ]
+    return section(
+        "validation", "шаг 4", "Валидация: чем именно проверяли",
+        "Случайное перемешивание здесь запрещено: транзакции живут во времени, и модель, "
+        "обученная на перемешанной выборке, подсматривает будущее. Обучение всегда на "
+        "прошлом, проверка на следующем отрезке, между ними зазор шире времени жизни "
+        "транзитной цепочки. Порог выбирается на прошлых отрезках и применяется к тому, "
+        "которого модель не видела.",
+        (table(["протокол", "фолд", "обучение", "проверка", "доля мошенников",
+                "общих кейсов", "ROC-AUC"], rows,
+               caption="Пофолдовый разбор на панели, первый мир. Колонка «общих кейсов» — "
+                       "доля проверяемых строк, чей кластер модель уже видела")
+         if rows else note("Прогона панели нет.", "warn"))
+        + "<h3>Как из этого получается очередь</h3>"
+        + table(["уровень", "порог", "доля мошенников в блоке", "дел выдал",
+                 "точность", "полнота", "потолок уровня"], queue_rows,
+                caption="Порог выбран на прошлом и применён к невиданному блоку")
+        + note(
+            "Четыре правила честности, которые здесь соблюдаются: генератор не пишет "
+            "признаки, поиск не читает ответы, обучение не заглядывает в будущее, "
+            "признак обязан побить перемешанный контроль."
+        ),
+    )
+
+
+def sec_manual(snap: dict[str, Any]) -> str:
+    """Живая проверка: форма, которая ходит в тот же процесс."""
+    bounds = {
+        "growth_rate": (0.0, 1.2, 0.45, "темп прироста участников"),
+        "referral_ratio": (0.0, 1.0, 0.62, "доля привлечённых по реферальной цепочке"),
+        "payout_dependency": (0.1, 1.9, 1.35, "выплаты к поступлениям"),
+        "centralization_index": (0.0, 1.0, 0.71, "централизация потока"),
+        "avg_holding_time": (3.0, 120.0, 11.0, "среднее удержание средств, часы"),
+        "reinvestment_rate": (0.0, 1.0, 0.58, "доля реинвестирования"),
+        "gini_coefficient": (0.1, 1.0, 0.68, "неравенство сумм"),
+        "transaction_entropy": (0.3, 5.0, 1.4, "энтропия операций"),
+        "structural_depth": (2.0, 16.0, 7.0, "глубина структуры"),
+    }
+    fields = "".join(
+        f"<label class='fld'><span>{esc(title)}</span>"
+        f"<input type='number' step='0.01' min='{low}' max='{high}' "
+        f"value='{default}' name='{name}' data-name='{name}'>"
+        f"<small>{name} · от {low} до {high}</small></label>"
+        for name, (low, high, default, title) in bounds.items()
+    )
+    return section(
+        "manual", "живьём", "Проверить руками: форма, которая ходит в работающий сервис",
+        "Это единственное место на странице, где что-то считается прямо сейчас, а не "
+        "читается из файла прогона. Форма отправляет девять величин в тот же процесс, "
+        "который отдаёт эту страницу, и показывает, что ответила модель. Работает, когда "
+        "страница открыта с локального сервера; из файла на диске — нет, и страница скажет "
+        "об этом прямо.",
+        f"<form id='manual' class='form'>{fields}"
+        "<button class='btn go' type='submit'>Оценить</button></form>"
+        "<div id='manual-out' class='out'></div>"
+        + note(
+            "Пороги 0.4 и 0.7 в ответе — это <b>не</b> калибровка под заданную полноту, а "
+            "зашитые значения старого движка. Настоящий порог выбирается прогоном, и он "
+            "показан в разделе «Валидация». Здесь он оставлен как есть, чтобы разница была "
+            "видна, а не замазана.",
+            kind="warn",
+        ),
+    )
+
+
 def sec_method(snap: dict[str, Any]) -> str:
     rules = [
         ("Генератор не пишет признаки",
@@ -1430,7 +1676,9 @@ def sec_sources(snap: dict[str, Any]) -> str:
 
 
 SECTIONS = (
-    sec_overview, sec_pipeline, sec_world, sec_queue, sec_ladder, sec_evasion,
+    sec_overview, sec_pipeline, sec_world,
+    sec_discovery, sec_dossier, sec_validation, sec_manual,
+    sec_queue, sec_ladder, sec_evasion,
     sec_rarity, sec_rules, sec_ceiling, sec_curves, sec_panel, sec_branches,
     sec_flow_weight, sec_elliptic, sec_method, sec_defects, sec_gap, sec_faq,
     sec_sources,
@@ -1457,6 +1705,7 @@ def build(snap: dict[str, Any] | None = None) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vertex — витрина измерений</title>
 <meta name="description" content="Все измерения проекта Vertex: что получилось, как проверено и чего это не доказывает.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M8 9l8 15 8-15' stroke='white' stroke-width='3.4' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>{CSS}</style>
 </head>
 <body>
