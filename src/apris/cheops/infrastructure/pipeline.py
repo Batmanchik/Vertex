@@ -60,6 +60,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -123,6 +125,10 @@ class QueueItem:
     #: чтобы витрина показывала досье кандидата из файла прогона, а не
     #: пересчитывала мир ради одной карточки.
     features: dict[str, float] = field(default_factory=dict)
+    #: Граф дела: рёбра из его же событий, суммы просуммированы по паре.
+    #: Витрина рисует именно его, а не картинку, выведенную из признаков или
+    #: из вердикта модели, — такая картинка всегда соглашается с оценкой.
+    graph: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -197,6 +203,40 @@ class PipelineReport:
                 f"{precision:>10}{outcome.recall:>9.3f}{per_catch:>12}"
             )
         return "\n".join(lines)
+
+
+#: Сколько рёбер класть в артефакт на одно дело. Дела бывают в тысячи
+#: событий; браузеру для формы схемы хватает верхушки по обороту, а файл
+#: остаётся читаемым.
+GRAPH_EDGE_CAP = 60
+
+
+def case_graph(row: Row, *, cap: int = GRAPH_EDGE_CAP) -> dict[str, Any]:
+    """Рёбра дела: кто кому сколько, просуммировано по паре.
+
+    Отбираются самые крупные по обороту — то, на чём держится форма. Вместе
+    с рёбрами возвращается, сколько их было всего: иначе по картинке нельзя
+    понять, что она усечена.
+    """
+    totals: dict[tuple[str, str], float] = {}
+    for event in row.events:
+        key = (event.sender_id, event.receiver_id)
+        totals[key] = totals.get(key, 0.0) + float(event.amount)
+
+    top = sorted(totals.items(), key=lambda pair: -pair[1])[:cap]
+    nodes = sorted({node for pair, _ in top for node in pair})
+    members = set(row.members)
+    return {
+        "nodes": [
+            {"id": node, "member": node in members}
+            for node in nodes
+        ],
+        "edges": [
+            {"from": sender, "to": receiver, "amount": round(amount, 2)}
+            for (sender, receiver), amount in top
+        ],
+        "edges_total": len(totals),
+    }
 
 
 def _matrix(rows: Sequence[Row]) -> np.ndarray:
@@ -305,6 +345,7 @@ def build_queue(
                 last_seen=max(stamps).isoformat() if stamps else "",
                 truth=int(row.label),
                 features={name: float(value) for name, value in sorted(row.features.items())},
+                graph=case_graph(row),
             )
         )
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import base64
 import html
+import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -121,6 +122,41 @@ def table(
         + cap
         + "</figure>"
     )
+
+
+def control(kind: str, name: str, label: str, **attrs: Any) -> str:
+    """Один регулятор. Значение всегда показано рядом — цифрой, а не на глаз."""
+    pairs = " ".join(f'{key.replace("_", "-")}="{esc(value)}"' for key, value in attrs.items())
+    if kind == "select":
+        options = "".join(
+            f"<option value='{esc(value)}'>{esc(title)}</option>"
+            for value, title in attrs.get("options", [])
+        )
+        return (
+            f"<label class='ctl'><span>{esc(label)}</span>"
+            f"<select data-ctl='{esc(name)}'>{options}</select></label>"
+        )
+    return (
+        f"<label class='ctl'><span>{esc(label)}</span>"
+        f"<input type='range' data-ctl='{esc(name)}' {pairs}>"
+        f"<output data-out='{esc(name)}'></output></label>"
+    )
+
+
+def controls(*items: str) -> str:
+    return f"<div class='ctls'>{''.join(items)}</div>"
+
+
+# Роли в графе задаются степенью узла: не принимает — источник, не отдаёт —
+# точка вывода, остальные — посредники. Та же легенда подходит и схемам, и делу.
+GRAPH_LEGEND = (
+    "<div class='legend'>"
+    "<span class='key'><i class='s2'></i>источник</span>"
+    "<span class='key'><i class='s1'></i>посредник</span>"
+    "<span class='key'><i class='s3'></i>точка вывода</span>"
+    "<span class='key'><i class='s4'></i>вне дела</span>"
+    "</div>"
+)
 
 
 def limit(text: str) -> str:
@@ -482,9 +518,36 @@ button.go{border:1px solid var(--ink2); color:var(--ink); padding:6px 16px;
   border-radius:3px; font-size:13.5px; height:31px}
 button.go:hover{background:var(--wash)}
 button.go:disabled{color:var(--muted); border-color:var(--rule); cursor:default}
+.fld input[type=range]{padding:0; border:0; background:none; height:22px}
 .out{font-size:13.5px; color:var(--ink2); min-height:22px}
 .out b{font-size:19px; color:var(--ink); font-variant-numeric:tabular-nums;
   margin-right:10px}
+
+/* Регуляторы. Значение всегда стоит цифрой рядом с ручкой: положение ползунка
+   само по себе ничего не сообщает, а цифру можно назвать вслух на защите. */
+.ctls{display:flex; flex-wrap:wrap; gap:14px 26px; margin:12px 0 16px;
+  padding:12px 0; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
+.ctl{display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--muted);
+  min-width:0}
+.ctl span{white-space:nowrap}
+.ctl output{color:var(--ink); font-size:14px; font-variant-numeric:tabular-nums;
+  line-height:1.2}
+.ctl input[type=range]{width:170px; max-width:100%; height:20px; margin:0;
+  accent-color:var(--s1); background:none; border:0; padding:0}
+.ctl select{font:inherit; font-size:13.5px; padding:4px 8px; color:var(--ink);
+  background:var(--plane); border:1px solid var(--rule); border-radius:3px;
+  max-width:100%}
+.ctl select:focus, .ctl input:focus{outline:1px solid var(--s1); outline-offset:1px}
+.ctl.off{opacity:.4}
+
+/* Граф: слои по ролям. Цвет — роль, толщина ребра — доля оборота. */
+.graph{width:100%; height:auto; display:block}
+.graph line.edge{stroke:var(--s4); opacity:.45; stroke-linecap:round}
+.graph circle.node{stroke:var(--plane); stroke-width:1.2; fill:var(--s1)}
+.graph circle.n-source{fill:var(--s2)}
+.graph circle.n-relay{fill:var(--s1)}
+.graph circle.n-sink{fill:var(--s3)}
+.graph circle.outside{fill:var(--s4); opacity:.5}
 
 @media (max-width:880px){
   .shell{grid-template-columns:minmax(0,1fr); gap:0; padding:18px 16px 60px}
@@ -511,31 +574,6 @@ SCRIPT = """
     try{localStorage.setItem(key, root.dataset.theme);}catch(e){}
   });
 
-  var form=document.getElementById('manual'), out=document.getElementById('manual-out');
-  if(form && out){
-    var live = location.protocol.indexOf('http') === 0;
-    if(!live){
-      out.textContent = 'Страница открыта файлом: считать некому. Запустите python scripts/serve.py';
-      form.querySelector('button').disabled = true;
-    }
-    form.addEventListener('submit', function(event){
-      event.preventDefault();
-      var payload={};
-      form.querySelectorAll('input[data-name]').forEach(function(input){
-        payload[input.dataset.name] = parseFloat(input.value);
-      });
-      out.textContent = 'считаю…';
-      fetch('/api/v1/predict', {method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)})
-        .then(function(r){ if(!r.ok) throw new Error('сервис ответил ' + r.status); return r.json(); })
-        .then(function(data){
-          out.innerHTML = '<b>' + (data.probability*100).toFixed(1) + ' %</b>' +
-            'класс ' + (data.label_text||'') + ' · пороги 0.4 / 0.7';
-        })
-        .catch(function(error){ out.textContent = error.message; });
-    });
-  }
-
   var links=[].slice.call(document.querySelectorAll('nav a'));
   var map={}; links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
   var obs=new IntersectionObserver(function(entries){
@@ -548,6 +586,328 @@ SCRIPT = """
     });
   },{rootMargin:'-8% 0px -80% 0px'});
   document.querySelectorAll('section.sec').forEach(function(s){obs.observe(s);});
+
+// ── данные прогонов, положенные в страницу при сборке ───────────────────
+var DATA = {};
+try { DATA = JSON.parse(document.getElementById('data').textContent); } catch (e) { DATA = {}; }
+
+function fmt(value, digits){ return (value === null || value === undefined || isNaN(value))
+  ? '—' : Number(value).toFixed(digits === undefined ? 3 : digits); }
+function spaced(value){ return Math.round(value).toLocaleString('ru-RU').replace(/,/g, ' '); }
+function money(value){
+  if (value >= 1e9) return (value/1e9).toFixed(1) + ' млрд ₸';
+  if (value >= 1e6) return (value/1e6).toFixed(1) + ' млн ₸';
+  if (value >= 1e3) return Math.round(value/1e3) + ' тыс ₸';
+  return Math.round(value) + ' ₸';
+}
+// «1 участник», а не «1 участников»: на защите это читают вслух.
+function plural(value, one, few, many){
+  var n = Math.abs(Math.round(value)) % 100, tail = n % 10;
+  if (n > 10 && n < 20) return many;
+  if (tail > 1 && tail < 5) return few;
+  if (tail === 1) return one;
+  return many;
+}
+function count(value, one, few, many){
+  return spaced(value) + ' ' + plural(value, one, few, many);
+}
+function el(id){ return document.getElementById(id); }
+function ctl(name){ return document.querySelector('[data-ctl="' + name + '"]'); }
+function out(name){ return document.querySelector('[data-out="' + name + '"]'); }
+
+// ── рисование графа: слои по ролям, толщина ребра по обороту ────────────
+function drawGraph(target, nodes, edges, options){
+  options = options || {};
+  var width = 520, height = options.height || 300, pad = 26;
+  var incoming = {}, outgoing = {};
+  nodes.forEach(function(node){ incoming[node.id] = 0; outgoing[node.id] = 0; });
+  edges.forEach(function(edge){
+    outgoing[edge.from] = (outgoing[edge.from] || 0) + 1;
+    incoming[edge.to] = (incoming[edge.to] || 0) + 1;
+  });
+
+  var layers = [[], [], []];
+  nodes.forEach(function(node){
+    if (!incoming[node.id]) layers[0].push(node);
+    else if (!outgoing[node.id]) layers[2].push(node);
+    else layers[1].push(node);
+  });
+  if (!layers[1].length && layers[2].length > 2){ layers[1] = layers[2].splice(0, layers[2].length - 1); }
+
+  var position = {}, byLayer = ['source', 'relay', 'sink'];
+  layers.forEach(function(layer, index){
+    var x = pad + index * (width - 2*pad) / 2;
+    layer.forEach(function(node, order){
+      if (!node.role) node.role = byLayer[index];
+      var span = height - 2*pad;
+      var y = layer.length === 1 ? height/2 : pad + order * span / (layer.length - 1);
+      position[node.id] = {x: x, y: y, node: node};
+    });
+  });
+
+  var peak = edges.reduce(function(max, edge){ return Math.max(max, edge.amount || 1); }, 1);
+  var svg = ['<svg viewBox="0 0 ' + width + ' ' + height + '" class="chart graph" role="img" aria-label="граф дела">'];
+  edges.forEach(function(edge){
+    var a = position[edge.from], b = position[edge.to];
+    if (!a || !b) return;
+    var weight = 0.6 + 3.4 * Math.sqrt((edge.amount || 1) / peak);
+    svg.push('<line class="edge" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+      '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
+      '" stroke-width="' + weight.toFixed(2) + '"><title>' + edge.from + ' → ' + edge.to +
+      (edge.amount ? ': ' + money(edge.amount) : '') + '</title></line>');
+  });
+  nodes.forEach(function(node){
+    var spot = position[node.id];
+    if (!spot) return;
+    var radius = node.role === 'sink' ? 7 : (node.role === 'source' ? 6.5 : 4.5);
+    var kind = 'n-' + (node.role || 'relay') + (node.member === false ? ' outside' : '');
+    svg.push('<circle class="node ' + kind + '" cx="' +
+      spot.x.toFixed(1) + '" cy="' + spot.y.toFixed(1) + '" r="' + radius +
+      '"><title>' + node.id + '</title></circle>');
+  });
+  svg.push('</svg>');
+  target.innerHTML = svg.join('');
+}
+
+// ── схемы типологий: строятся по параметрам, не по данным ──────────────
+function buildShape(kind, members, sources, sinks){
+  var nodes = [], edges = [], index = 0;
+  function add(id, role){ nodes.push({id: id, role: role, member: true}); return id; }
+
+  if (kind === 'pyramid'){
+    var top = add('организатор', 'sink');
+    for (var level = 0; level < members; level++){
+      var participant = add('участник ' + (level + 1), 'source');
+      edges.push({from: participant, to: top, amount: 1 + (members - level)});
+    }
+    return {nodes: nodes, edges: edges,
+      note: 'Пирамида: сбор средств множества участников в одну точку.'};
+  }
+  if (kind === 'fan'){
+    var origin = add('источник', 'source');
+    var collector = add('получатель', 'sink');
+    for (index = 0; index < members; index++){
+      var hop = add('посредник ' + (index + 1), 'relay');
+      edges.push({from: origin, to: hop, amount: 2});
+      edges.push({from: hop, to: collector, amount: 2});
+    }
+    return {nodes: nodes, edges: edges,
+      note: 'Веерный транзит: сумма дробится, проходит через посредников и собирается обратно.'};
+  }
+  if (kind === 'cycle'){
+    var ring = [];
+    for (index = 0; index < Math.max(3, members); index++){ ring.push(add('счёт ' + (index + 1), 'relay')); }
+    ring.forEach(function(node, order){
+      edges.push({from: node, to: ring[(order + 1) % ring.length], amount: 2});
+    });
+    return {nodes: nodes, edges: edges,
+      note: 'Циклический транзит: деньги ходят по кругу подконтрольных счетов.'};
+  }
+
+  var sourceIds = [], sinkIds = [];
+  for (index = 0; index < sources; index++){ sourceIds.push(add('источник ' + (index + 1), 'source')); }
+  for (index = 0; index < sinks; index++){ sinkIds.push(add('банкомат ' + (index + 1), 'sink')); }
+  for (index = 0; index < members; index++){
+    var mule = add('дроп ' + (index + 1), 'relay');
+    edges.push({from: sourceIds[index % sourceIds.length], to: mule, amount: 3});
+    edges.push({from: mule, to: sinkIds[index % sinkIds.length], amount: 3});
+  }
+  return {nodes: nodes, edges: edges, note: kind === 'flash'
+    ? 'Банкоматная вспышка: десятки веток сходятся к нескольким банкоматам в узком окне.'
+    : 'Кольцо обналички: источник, дропы, точка вывода.'};
+}
+
+function renderShape(){
+  var host = el('shape');
+  if (!host) return;
+  var kind = ctl('shape').value;
+  var members = parseInt(ctl('shape-members').value, 10);
+  var sources = parseInt(ctl('shape-sources').value, 10);
+  var sinks = parseInt(ctl('shape-sinks').value, 10);
+  // Пирамида, веер и цикл не читают число источников и точек вывода — ручка,
+  // которая ничего не меняет, вводит в заблуждение, поэтому она гаснет.
+  var splits = (kind === 'ring' || kind === 'flash');
+  ['shape-sources', 'shape-sinks'].forEach(function(name){
+    var input = ctl(name);
+    if (!input) return;
+    input.disabled = !splits;
+    if (input.parentNode) input.parentNode.classList.toggle('off', !splits);
+  });
+
+  var shape = buildShape(kind, members, sources, sinks);
+  drawGraph(host, shape.nodes, shape.edges, {height: 300});
+  el('shape-note').textContent = shape.note + ' Узлов ' + shape.nodes.length +
+    ', рёбер ' + shape.edges.length + '.';
+}
+
+// ── досье: выбор дела, его граф и его признаки ─────────────────────────
+function renderCase(){
+  var picker = ctl('case');
+  if (!picker || !DATA.cases || !DATA.cases.length) return;
+  var chosen = DATA.cases[parseInt(picker.value, 10)] || DATA.cases[0];
+
+  el('case-facts').innerHTML = [
+    ['<b>' + fmt(chosen.score) + '</b><span>оценка детектора</span>'],
+    ['<b>' + spaced(chosen.members) + '</b><span>' +
+      plural(chosen.members, 'участник', 'участника', 'участников') + '</span>'],
+    ['<b>' + spaced(chosen.events) + '</b><span>' +
+      plural(chosen.events, 'событие', 'события', 'событий') + '</span>'],
+    ['<b>' + money(chosen.amount) + '</b><span>оборот</span>'],
+    ['<b>' + (chosen.truth ? 'мошенническая' : 'честная') + '</b><span>разметка</span>']
+  ].map(function(cell){ return '<div>' + cell + '</div>'; }).join('');
+
+  var graph = chosen.graph || {};
+  drawGraph(el('case-graph'), graph.nodes || [], graph.edges || [], {height: 300});
+  el('case-graph-note').textContent = 'Рёбер показано ' + (graph.edges || []).length +
+    ' из ' + (graph.edges_total || 0) + ', узлов ' + (graph.nodes || []).length + '.';
+
+  var names = Object.keys(chosen.features || {}).sort(function(a, b){
+    return chosen.features[b] - chosen.features[a];
+  });
+  var rowHeight = 22, width = 520, labelWidth = 200;
+  var bars = ['<svg viewBox="0 0 ' + width + ' ' + (names.length * rowHeight + 10) +
+    '" class="chart" role="img" aria-label="признаки дела">'];
+  names.forEach(function(name, order){
+    var value = chosen.features[name];
+    var y = 5 + order * rowHeight;
+    var x2 = labelWidth + value * (width - labelWidth - 56);
+    bars.push('<text class="blabel" x="' + (labelWidth - 8) + '" y="' + (y + 12) +
+      '" text-anchor="end">' + ((DATA.feature_ru || {})[name] || name) + '</text>');
+    bars.push('<rect class="bar s1" x="' + labelWidth + '" y="' + (y + 4) + '" width="' +
+      Math.max(x2 - labelWidth, 1).toFixed(1) + '" height="' + (rowHeight - 10) +
+      '" rx="2"><title>' + name + ': ' + fmt(value) + '</title></rect>');
+    bars.push('<text class="bvalue" x="' + (x2 + 6).toFixed(1) + '" y="' + (y + 12) + '">' +
+      fmt(value) + '</text>');
+  });
+  bars.push('</svg>');
+  el('case-features').innerHTML = bars.join('');
+}
+
+// ── редкость: пересчёт измеренной ROC-кривой ──────────────────────────
+function renderRarity(){
+  var host = el('rarity-out');
+  if (!host || !DATA.roc || !DATA.roc.points.length) return;
+  var prevalence = parseFloat(ctl('prevalence').value) / 100;
+  var target = parseFloat(ctl('recall').value) / 100;
+
+  var point = null;
+  DATA.roc.points.forEach(function(candidate){
+    if (candidate.y >= target && (point === null || candidate.x < point.x)) point = candidate;
+  });
+  if (!point) point = DATA.roc.points[DATA.roc.points.length - 1];
+
+  var caught = prevalence * point.y;
+  var false_alarms = (1 - prevalence) * point.x;
+  var precision = (caught + false_alarms) > 0 ? caught / (caught + false_alarms) : 0;
+  var alerts = 1000 * (caught + false_alarms);
+
+  host.innerHTML = [
+    ['<b>' + fmt(precision, 3) + '</b><span>точность очереди</span>'],
+    ['<b>' + (precision > 0 ? fmt(1 / precision, 1 / precision < 10 ? 1 : 0) : '—') +
+      '</b><span>проверок на находку</span>'],
+    ['<b>' + fmt(alerts, 1) + '</b><span>сигналов на 1000 счетов</span>'],
+    ['<b>' + fmt(point.y, 2) + '</b><span>полнота в этой точке</span>'],
+    ['<b>' + fmt(point.x, 4) + '</b><span>доля ложных тревог</span>']
+  ].map(function(cell){ return '<div>' + cell + '</div>'; }).join('');
+}
+
+// ── уклонение: измеренная точка или честное «не измерялась» ────────────
+function renderEvasion(){
+  var host = el('evasion-out');
+  if (!host || !DATA.evasion) return;
+  var funders = parseInt(ctl('ev-funders').value, 10);
+  var atms = parseInt(ctl('ev-atms').value, 10);
+  var found = null;
+  DATA.evasion.forEach(function(row){
+    if (row.funders === funders && row.atms === atms) found = row;
+  });
+  host.innerHTML = found
+    ? [['<b>' + fmt(found.found, 3) + '</b><span>найдено групп</span>'],
+       ['<b>' + fmt(found.overlap, 3) + '</b><span>медиана перекрытия</span>'],
+       ['<b>' + found.label + '</b><span>настройка прогона</span>']]
+        .map(function(cell){ return '<div>' + cell + '</div>'; }).join('')
+    : '<div><b>не измерялась</b><span>такой конфигурации в прогоне не было</span></div>';
+}
+
+// ── живая оценка: движение регулятора пересчитывает ответ сервиса ──────
+function setupManual(){
+  var form = el('manual'), result = el('manual-out');
+  if (!form || !result) return;
+  var live = location.protocol.indexOf('http') === 0;
+  var timer = null;
+
+  function show(){
+    form.querySelectorAll('input[data-name]').forEach(function(input){
+      var target = out(input.dataset.name);
+      if (target) target.textContent = input.value;
+    });
+  }
+  function send(){
+    if (!live){
+      result.textContent = 'Страница открыта файлом: считать некому. Запустите python scripts/serve.py';
+      return;
+    }
+    var payload = {};
+    form.querySelectorAll('input[data-name]').forEach(function(input){
+      payload[input.dataset.name] = parseFloat(input.value);
+    });
+    fetch('/api/v1/predict', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)})
+      .then(function(response){
+        if (!response.ok) throw new Error('сервис ответил ' + response.status);
+        return response.json();
+      })
+      .then(function(data){
+        result.innerHTML = '<b>' + (data.probability * 100).toFixed(1) + ' %</b>класс ' +
+          (data.label_text || '') + ' · пороги 0.4 / 0.7';
+      })
+      .catch(function(error){ result.textContent = error.message; });
+  }
+  form.addEventListener('input', function(){
+    show();
+    clearTimeout(timer);
+    timer = setTimeout(send, 200);
+  });
+  form.addEventListener('submit', function(event){ event.preventDefault(); send(); });
+  show();
+  send();
+}
+
+// ── общая проводка регуляторов ────────────────────────────────────────
+function wire(names, render){
+  var found = false;
+  names.forEach(function(name){
+    var input = ctl(name);
+    if (!input) return;
+    found = true;
+    input.addEventListener('input', function(){
+      var target = out(name);
+      if (target) target.textContent = input.value;
+      render();
+    });
+    var target = out(name);
+    if (target) target.textContent = input.value;
+  });
+  if (found) render();
+}
+
+(function setupInteractive(){
+  var picker = ctl('case');
+  if (picker && DATA.cases && DATA.cases.length){
+    picker.innerHTML = DATA.cases.map(function(item, index){
+      return '<option value="' + index + '">' + item.key + ' · ' + item.unit +
+        ' · оценка ' + fmt(item.score) + '</option>';
+    }).join('');
+    picker.addEventListener('change', renderCase);
+    renderCase();
+  }
+  wire(['shape', 'shape-members', 'shape-sources', 'shape-sinks'], renderShape);
+  var shapePicker = ctl('shape');
+  if (shapePicker) shapePicker.addEventListener('change', renderShape);
+  wire(['prevalence', 'recall'], renderRarity);
+  wire(['ev-funders', 'ev-atms'], renderEvasion);
+  setupManual();
+})();
 })();
 """
 
@@ -557,7 +917,7 @@ SCRIPT = """
 # ──────────────────────────────────────────────────────────────────────
 NAV: list[tuple[str, list[tuple[str, str]]]] = [
     ("Система", [("overview", "Обзор"), ("pipeline", "Конвейер"), ("world", "Мир"),
-                 ("discovery", "Поиск сетей"), ("dossier", "Досье"),
+                 ("shapes", "Схемы"), ("discovery", "Поиск сетей"), ("dossier", "Досье"),
                  ("validation", "Валидация"), ("manual", "Проверить")]),
     ("Измерения", [("queue", "Очередь"), ("ladder", "Лестница миров"),
                    ("evasion", "Уклонение"), ("rarity", "Редкость"),
@@ -684,6 +1044,32 @@ def sec_world(snap: dict[str, Any]) -> str:
     )
 
 
+def sec_shapes(snap: dict[str, Any]) -> str:
+    return section(
+        "shapes", "Схемы: формы, которые ищет детектор",
+        "Пять типологий в виде графа. Это схема формы, а не данные прогона: "
+        "число участников задаётся регуляторами, чтобы было видно, как форма ведёт "
+        "себя при росте. Граф конкретного дела из прогона — в разделе «Досье».",
+        controls(
+            control("select", "shape", "типология", options=[
+                ("ring", "кольцо обналички"),
+                ("pyramid", "пирамида"),
+                ("fan", "веерный транзит"),
+                ("cycle", "циклический транзит"),
+                ("flash", "банкоматная вспышка"),
+            ]),
+            control("range", "shape-members", "участников", min=4, max=40, value=12, step=1),
+            control("range", "shape-sources", "источников", min=1, max=6, value=1, step=1),
+            control("range", "shape-sinks", "точек вывода", min=1, max=6, value=1, step=1),
+        )
+        + "<figure class='fig'><div id='shape'></div>"
+        + GRAPH_LEGEND
+        + "<figcaption id='shape-note'></figcaption></figure>"
+        + "<p class='sub'>Толщина ребра пропорциональна доле потока. Слева источники, "
+          "справа точки вывода, между ними посредники.</p>",
+    )
+
+
 def sec_discovery(snap: dict[str, Any]) -> str:
     blocks = snap["blocks"]
     worlds = snap["worlds"]
@@ -730,19 +1116,22 @@ def sec_dossier(snap: dict[str, Any]) -> str:
     ]
     return section(
         "dossier", "Досье кандидата",
-        f"Верхнее дело очереди: кандидат {esc(str(item.get('key')))}, оценка "
-        f"{num(item.get('score'), 3)}, по разметке — "
-        f"{'мошенническая группа' if item.get('truth') else 'честная группа'}. "
-        "Все величины посчитаны детектором из событий этого кандидата.",
-        facts([
-            (thousands(item.get("members")), "участников"),
-            (thousands(item.get("events")), "событий"),
-            (money(item.get("amount_total")), "оборот"),
-            (num(item.get("score"), 3), "оценка детектора"),
-        ])
-        + chart_bars(bars, lo=0.0, hi=1.0)
-        + "<p class='sub'>Значения приведены к отрезку [0, 1]. Английские имена признаков "
-          "видны в подсказках графика — под ними они лежат в коде и в файлах прогонов.</p>"
+        "Дело из очереди целиком: его граф, построенный из его же событий, и признаки, "
+        "по которым он получил оценку. Дело выбирается списком.",
+        controls(control("select", "case", "дело", options=[]))
+        + "<div id='case-facts' class='facts'></div>"
+        + "<div class='pair'>"
+        + "<figure class='fig'><div id='case-graph'></div>"
+        + GRAPH_LEGEND
+        + "<figcaption id='case-graph-note'></figcaption></figure>"
+        + f"<figure class='fig'><div id='case-features'>{chart_bars(bars, lo=0.0, hi=1.0)}"
+          "</div></figure>"
+        + "</div>"
+        + "<p class='sub'>Рёбра просуммированы по паре «отправитель → получатель», "
+          "в графе показаны крупнейшие по обороту. Признаки приведены к отрезку [0, 1]; "
+          "их английские имена видны в подсказках.</p>"
+        + limit("Картинка построена из событий дела. Она не выводится ни из признаков, "
+                "ни из вердикта модели — такая картинка соглашалась бы с оценкой всегда.")
         + source("artifacts/analyst_queue.json"),
     )
 
@@ -787,33 +1176,42 @@ def sec_validation(snap: dict[str, Any]) -> str:
 
 
 def sec_manual(snap: dict[str, Any]) -> str:
+    # Начальные значения — не «типичная пирамида», а точка, где движок даёт
+    # примерно 0.5. Взяты бинарным поиском по отрезку между явно честным и явно
+    # мошенническим набором: в любой другой точке движок насыщен и сдвиг ручки
+    # ничего не меняет на экране.
     bounds = {
-        "growth_rate": (0.0, 1.2, 0.45, "прирост участников"),
-        "referral_ratio": (0.0, 1.0, 0.62, "доля по реферальной цепочке"),
-        "payout_dependency": (0.1, 1.9, 1.35, "выплаты к поступлениям"),
-        "centralization_index": (0.0, 1.0, 0.71, "централизация потока"),
-        "avg_holding_time": (3.0, 120.0, 11.0, "удержание средств, часы"),
-        "reinvestment_rate": (0.0, 1.0, 0.58, "реинвестирование"),
-        "gini_coefficient": (0.1, 1.0, 0.68, "неравенство сумм"),
-        "transaction_entropy": (0.3, 5.0, 1.4, "энтропия операций"),
-        "structural_depth": (2.0, 16.0, 7.0, "глубина структуры"),
+        "growth_rate": (0.0, 1.2, 0.285, "прирост участников"),
+        "referral_ratio": (0.0, 1.0, 0.384, "доля по реферальной цепочке"),
+        "payout_dependency": (0.1, 1.9, 1.164, "выплаты к поступлениям"),
+        "centralization_index": (0.0, 1.0, 0.458, "централизация потока"),
+        "avg_holding_time": (3.0, 120.0, 44.0, "удержание средств, часы"),
+        "reinvestment_rate": (0.0, 1.0, 0.361, "реинвестирование"),
+        "gini_coefficient": (0.1, 1.0, 0.482, "неравенство сумм"),
+        "transaction_entropy": (0.3, 5.0, 2.7, "энтропия операций"),
+        "structural_depth": (2.0, 16.0, 5.0, "глубина структуры"),
     }
+    step = {"avg_holding_time": 1, "structural_depth": 1, "transaction_entropy": 0.1}
     fields = "".join(
         f"<label class='fld'><span>{esc(title)}</span>"
-        f"<input type='number' step='0.01' min='{low}' max='{high}' value='{default}' "
-        f"data-name='{name}'><small>{name} · {low}–{high}</small></label>"
+        f"<input type='range' min='{low}' max='{high}' value='{default}' "
+        f"step='{step.get(name, 0.01)}' data-name='{name}'>"
+        f"<small><output data-out='{name}'>{default}</output> · {name}</small></label>"
         for name, (low, high, default, title) in bounds.items()
     )
     return section(
         "manual", "Проверить",
-        "Девять величин уходят в <code>/api/v1/predict</code> того же процесса, ответ "
-        "показывается как есть. Работает при открытии с локального сервера.",
-        f"<form id='manual' class='form'>{fields}"
-        "<button class='go' type='submit'>Оценить</button></form>"
+        "Девять величин уходят в <code>/api/v1/predict</code> того же процесса; ответ "
+        "обновляется при движении любого регулятора. Работает при открытии с локального "
+        "сервера.",
+        f"<form id='manual' class='form'>{fields}</form>"
         "<div id='manual-out' class='out'></div>"
         + limit("Пороги 0.4 и 0.7 в ответе зашиты в старом движке и не калиброваны под "
                 "заданную полноту; рабочий порог выбирается прогоном и показан в разделе "
-                "«Валидация»."),
+                "«Валидация».")
+        + limit("Ручки стоят в точке, где движок даёт около половины. В стороне от неё "
+                "ответ упирается в ноль или единицу и перестаёт отзываться на сдвиг: "
+                "это свойство старого движка, а не измерение."),
     )
 
 
@@ -899,6 +1297,14 @@ def sec_evasion(snap: dict[str, Any]) -> str:
                    xlabel="источников / банкоматов", value_digits=2)
         + table(["настройка", "источников", "банкоматов", "найдено групп",
                  "медиана перекрытия"], table_rows)
+        + "<h3>Выбрать конфигурацию</h3>"
+        + controls(
+            control("range", "ev-funders", "источников", min=1, max=6, value=1, step=1),
+            control("range", "ev-atms", "банкоматов", min=1, max=4, value=1, step=1),
+        )
+        + "<div id='evasion-out' class='facts'></div>"
+        + "<p class='sub'>Показываются измеренные значения. Конфигурация, которой в "
+          "прогоне не было, так и называется — не измерялась.</p>"
         + limit("Набор зацепок задан нами: общий источник и общий банкомат. У банка их "
                 "больше (устройство, IP, телефон), поэтому цифры относятся к этому "
                 "набору, а не к поиску групп вообще.")
@@ -941,10 +1347,20 @@ def sec_rarity(snap: dict[str, Any]) -> str:
         + "</div>"
         + table(["доля мошенников", "их в мире", "ROC-AUC", "точность верхних 10 %",
                  "проверок на находку"], table_rows)
-        + ("<h3>Порог вместо бюджета</h3>"
+        + "<h3>Пересчёт при своей доле мошенников</h3>"
+        + controls(
+            control("range", "prevalence", "доля мошенников, %",
+                    min=0.05, max=10, value=1, step=0.05),
+            control("range", "recall", "поймать дропов, %", min=10, max=95, value=50, step=5),
+        )
+        + "<div id='rarity-out' class='facts'></div>"
+        + "<p class='sub'>Считается по измеренной ROC-кривой: "
+          "<code>точность = π·TPR / (π·TPR + (1−π)·FPR)</code>. Модель не переобучается, "
+          "меняется только цена порога при заданной редкости.</p>"
+        + ("<h3>Порог вместо бюджета: измеренные точки</h3>"
            + table(["поймать дропов", "сигналов на 1000 счетов", "точность",
                     "проверок на находку"], point_rows,
-                   caption="Пересчёт измеренной ROC-кривой при доле мошенников 0.1 %")
+                   caption="Прогон при доле мошенников 0.1 %")
            if point_rows else "")
         + limit("Ячейка 0.1 % стоит на 13 мошеннических строках, разброс по сидам там "
                 "0.842–0.997. Редкость получена прореживанием: окружение оставшегося "
@@ -1261,8 +1677,63 @@ def sec_sources(snap: dict[str, Any]) -> str:
     )
 
 
+def payload(snap: dict[str, Any]) -> str:
+    """Измерения, которые пересчитывает браузер.
+
+    В страницу кладутся только те величины, по которым регуляторы считают
+    арифметику: измеренная ROC-кривая, строки развёртки по редкости,
+    измеренные точки уклонения и дела очереди вместе с их графами. Ничего
+    нового браузер не выдумывает — он пересчитывает уже измеренное по
+    формуле, которая написана рядом.
+    """
+    curves = snap["curves"]
+    best = None
+    if curves.present and curves.items:
+        account = [c for c in curves.items if c.scope == "account"]
+        best = max(account or curves.items, key=lambda c: c.roc_auc)
+
+    blocks = snap["blocks"]
+    cases = [
+        {
+            "key": item.get("key"),
+            "unit": block.unit,
+            "score": item.get("score"),
+            "truth": item.get("truth"),
+            "members": item.get("members"),
+            "events": item.get("events"),
+            "amount": item.get("amount_total"),
+            "features": item.get("features") or {},
+            "graph": item.get("graph") or {},
+        }
+        for block in blocks
+        for item in block.items[:12]
+        if item.get("graph")
+    ]
+
+    body = {
+        "roc": {
+            "points": [{"x": point["x"], "y": point["y"]} for point in best.roc] if best else [],
+            "model": f"{best.model_ru}, {best.scope_ru}" if best else "",
+            "base_rate": best.base_rate if best else None,
+        },
+        "rarity": [
+            {"prevalence": row.prevalence, "roc_auc": row.roc_auc,
+             "precision": row.precision_at_budget, "reviews": row.reviews_per_catch}
+            for row in snap["rarity"]
+        ],
+        "evasion": [
+            {"funders": row.funders, "atms": row.atms, "found": row.found_share,
+             "overlap": row.median_overlap, "label": row.label}
+            for row in snap["evasion"]
+        ],
+        "cases": cases,
+        "feature_ru": FEATURE_RU,
+    }
+    return json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
 SECTIONS = (
-    sec_overview, sec_pipeline, sec_world, sec_discovery, sec_dossier, sec_validation,
+    sec_overview, sec_pipeline, sec_world, sec_shapes, sec_discovery, sec_dossier, sec_validation,
     sec_manual, sec_queue, sec_ladder, sec_evasion, sec_rarity, sec_rules, sec_ceiling,
     sec_curves, sec_panel, sec_branches, sec_flow_weight, sec_elliptic, sec_defects,
     sec_gap, sec_sources,
@@ -1304,6 +1775,7 @@ def build(snap: dict[str, Any] | None = None) -> str:
   <nav>{nav}</nav>
   <main>{body}</main>
 </div>
+<script type="application/json" id="data">{payload(snap)}</script>
 <script>{SCRIPT}</script>
 </body>
 </html>"""

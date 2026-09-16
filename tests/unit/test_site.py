@@ -114,6 +114,54 @@ def test_every_artifact_string_on_the_page_is_escaped() -> None:
     assert "<script" not in body, "в содержимом страницы скриптов быть не должно"
 
 
+def test_every_control_has_something_that_reads_it() -> None:
+    """Ручка, которую никто не слушает, — обещание, которого страница не держит.
+
+    На защите это худший вид ошибки: ползунок двигается, число рядом с ним
+    меняется, а картинка стоит. Поэтому каждое имя регулятора обязано
+    встретиться и в разметке, и в скрипте.
+    """
+    page = build()
+    names = set(re.findall(r"data-ctl='([^']+)'", page))
+    assert names, "регуляторов на странице нет"
+    script = page.split("<script>", 1)[-1]
+    for name in names:
+        assert f"'{name}'" in script, f"регулятор {name} ни к чему не подключён"
+
+
+def test_the_page_carries_the_data_its_controls_recompute_from() -> None:
+    """Пересчёт идёт по числам прогона, положенным в страницу при сборке.
+
+    Если бы их не было, на странице рисовались бы правдоподобные кривые
+    ниоткуда — ровно то, чего витрина не должна делать.
+    """
+    page = build()
+    raw = re.search(
+        r"<script type=\"application/json\" id=\"data\">(.*?)</script>", page, re.S
+    )
+    assert raw is not None, "данных для пересчёта на странице нет"
+    payload = json.loads(raw.group(1))
+
+    assert payload["roc"]["points"], "кривая, по которой считается редкость, пуста"
+    for point in payload["roc"]["points"]:
+        assert 0.0 <= point["x"] <= 1.0 and 0.0 <= point["y"] <= 1.0
+
+    assert payload["cases"], "дел для досье нет"
+    for case in payload["cases"]:
+        graph = case["graph"]
+        ids = {node["id"] for node in graph["nodes"]}
+        assert graph["edges_total"] >= len(graph["edges"]), "усечение не названо"
+        for edge in graph["edges"]:
+            # Ребро в никуда нарисовалось бы обрывком линии.
+            assert edge["from"] in ids and edge["to"] in ids
+
+
+def test_the_page_never_invents_a_measurement_it_does_not_have() -> None:
+    """Конфигурация уклонения, которой не было в прогоне, так и называется."""
+    page = build()
+    assert "не измерялась" in page
+
+
 def test_the_page_is_small_enough_to_open_instantly() -> None:
     """Витрина открывается с флешки на чужой машине; вес — это время."""
     assert len(build().encode("utf-8")) < 4 * 1024 * 1024
