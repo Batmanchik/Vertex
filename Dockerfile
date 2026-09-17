@@ -11,12 +11,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# pages/ и app.py были интерфейсом на Streamlit. Витрина переехала на ту же
+# страницу, что отдаёт API, и обеих строк здесь больше нет.
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-COPY pages ./pages
 COPY scripts ./scripts
 COPY docs ./docs
-COPY app.py ./
+# artifacts/ не копируется: docker-compose монтирует каталог томом, чтобы
+# пересчитанный прогон подхватывался без пересборки образа.
 
 RUN python -m pip install --upgrade pip \
     && python -m pip install .
