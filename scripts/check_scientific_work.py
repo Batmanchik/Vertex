@@ -177,6 +177,20 @@ ROWS_PER_PAGE = 46
 HEADING_COST = {1: 190, 2: 165, 3: 145}
 PARAGRAPH_COST = 25   # отступ после каждого абзаца
 
+# Принудительный разрыв страницы выбрасывает остаток текущей — в среднем
+# две трети. Это и была причина, по которой первая версия счётчика показывала
+# двадцать страниц там, где Word показывал двадцать шесть: одиннадцать
+# разрывов стоили шесть страниц, и ни один символ их не объяснял.
+# Величина откалибрована по этому расхождению.
+BREAK_COST = 0.67
+FREE_BREAKS = 2       # после титульного листа и оглавления — они и так короткие
+
+
+def count_page_breaks() -> int:
+    """Принудительные разрывы страниц в собранном файле."""
+    with zipfile.ZipFile(DOC) as archive:
+        return archive.read("word/document.xml").decode("utf-8").count('w:type="page"')
+
 
 def estimate_pages() -> tuple[float, int, int]:
     """Оценка числа страниц без отрисовки.
@@ -200,9 +214,12 @@ def estimate_pages() -> tuple[float, int, int]:
         elif par.text.strip():
             overhead += PARAGRAPH_COST
 
-    # Титульный лист и оглавление занимают по странице каждый.
+    # Титульный лист и оглавление занимают по странице каждый; каждый
+    # разрыв сверх них выбрасывает остаток страницы.
     prose = text - table_text + overhead
-    pages = prose / CHARS_PER_PAGE + rows / ROWS_PER_PAGE + 2
+    extra_breaks = max(0, count_page_breaks() - FREE_BREAKS)
+    pages = (prose / CHARS_PER_PAGE + rows / ROWS_PER_PAGE
+             + 2 + extra_breaks * BREAK_COST)
     return pages, text, rows
 
 
