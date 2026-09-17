@@ -25,6 +25,11 @@ const ROOT = path.resolve(__dirname, "..");
 const FIG = path.join(ROOT, "artifacts", "figures", "defence");
 const OUT = path.join(ROOT, "artifacts", "Vertex_defence.pptx");
 
+const readRun = (name) =>
+  JSON.parse(fs.readFileSync(path.join(ROOT, "artifacts", name), "utf-8"));
+const queue = readRun("analyst_queue.json");
+const pct = (value) => `${Math.round(value * 100)} %`;
+
 // Палитра «ночной пульт наблюдения»: индиго доминирует, янтарь — единственный
 // акцент, и он же цвет цены/риска на всех трёх графиках работы.
 const NIGHT = "0E1633";
@@ -367,10 +372,14 @@ async function build() {
   // ======================================================================
   {
     const s = contentSlide("Что система кладёт человеку на стол", "Результат 1");
+    // Числа прогона, а не числа из головы: слайд и витрина читают один файл.
+    // Вписанные руками, они разошлись с прогоном и держались так две недели —
+    // жюри сверило бы слайд с сайтом за секунду.
+    const accounts = queue.outcomes.find((o) => o.unit === "счета");
     const items = [
-      ["31", "дело в очереди за отрезок,\nкоторый детектор не видел", NIGHT],
-      ["100 %", "из них — настоящие дропперы", AMBER],
-      ["48 %", "всех дропперов отрезка\nпойманы этой очередью", NIGHT],
+      [String(accounts.queued), "дел в очереди за отрезок,\nкоторый детектор не видел", NIGHT],
+      [pct(accounts.precision), "из них — настоящие дропперы", AMBER],
+      [pct(accounts.recall), "всех дропперов отрезка\nпойманы этой очередью", NIGHT],
     ];
     for (let i = 0; i < items.length; i++) {
       const [value, label, color] = items[i];
@@ -609,7 +618,9 @@ async function build() {
         fontFace: BODY, fontSize: 14, color: ICE, lineSpacing: 21,
       });
     }
-    s.addText("Дальше: крипто-ступень в лестницу миров  ·  метрики BAS и SIS  ·  внешняя валидация на Elliptic", {
+    // Elliptic отсюда убран: внешняя валидация сделана (задача 4.1), и
+    // обещать её как будущую работу значит недооценивать сделанное.
+    s.addText("Дальше: крипто-ступень в лестницу миров  ·  метрики BAS и SIS  ·  обучение ансамбля на панели дел", {
       x: M, y: 6.25, w: 11.8, h: 0.5, isTextBox: true, margin: 0,
       fontFace: BODY, fontSize: 14, color: "E5A353", bold: true,
     });
