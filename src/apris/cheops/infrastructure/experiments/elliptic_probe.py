@@ -55,18 +55,29 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 
 from apris.cheops.infrastructure.external.elliptic import (
+    RICH_FEATURE_NAMES,
     STRUCTURAL_FEATURE_NAMES,
     EllipticGraph,
     neighbourhood,
+    rich_features,
     structural_features,
 )
 
 LOCAL_FEATURE_NAMES: tuple[str, ...] = ("in_degree", "out_degree", "case_size")
 
+# Четыре руки, и первая остаётся ради сравнения: без неё нельзя сказать,
+# насколько расширенный набор лучше, а «стало лучше» без числа — не результат.
 FEATURE_SETS: dict[str, tuple[str, ...]] = {
     "structural": STRUCTURAL_FEATURE_NAMES,
     "structural_plus_local": STRUCTURAL_FEATURE_NAMES + LOCAL_FEATURE_NAMES,
+    "shape": RICH_FEATURE_NAMES,
+    "shape_plus_local": RICH_FEATURE_NAMES + LOCAL_FEATURE_NAMES,
 }
+
+# Рука, числом которой отчитываются: чистая форма, без активности узла.
+# Проверяется гипотеза «форму потока поменять нельзя», а не «сколько
+# столбцов есть в наборе».
+HEADLINE_ARM = "shape"
 
 DEFAULT_SPLITS = 5
 DEFAULT_PURGE_STEPS = 1  # one Elliptic step ≈ two weeks
@@ -124,6 +135,7 @@ def build_rows(
             continue
         subgraph = neighbourhood(data.graph, node, hops=hops, cap=cap)
         features = dict(structural_features(subgraph))
+        features.update(rich_features(subgraph, node))
         features["in_degree"] = float(data.graph.in_degree(node))
         features["out_degree"] = float(data.graph.out_degree(node))
         features["case_size"] = float(subgraph.number_of_nodes())
@@ -362,9 +374,11 @@ def run_probe(
         )
         for name, names in FEATURE_SETS.items()
     }
+    # Контроль ставится на ту руку, числом которой отчитываются: контроль на
+    # другом наборе признаков измеряет не тот запас.
     arms["control_shuffled_labels"] = _arm_report(
         rows,
-        FEATURE_SETS["structural"],
+        FEATURE_SETS[HEADLINE_ARM],
         seed=seed,
         n_splits=n_splits,
         purge_steps=purge_steps,
@@ -372,7 +386,7 @@ def run_probe(
         shuffle_labels=True,
     )
 
-    structural = arms["structural"]["pooled_roc_auc"]
+    structural = arms[HEADLINE_ARM]["pooled_roc_auc"]
     control = arms["control_shuffled_labels"]["pooled_roc_auc"]
     return {
         "task": "4.1 Elliptic probe",
@@ -399,7 +413,7 @@ def run_probe(
         "single_feature_auc_in_sample": {
             name: round(value, 4)
             for name, value in single_feature_auc(
-                rows, FEATURE_SETS["structural_plus_local"]
+                rows, FEATURE_SETS["shape_plus_local"]
             ).items()
         },
         "arms": arms,

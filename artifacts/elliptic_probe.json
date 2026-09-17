@@ -14,7 +14,7 @@
     "hops": 2,
     "cap": 400,
     "limit": null,
-    "build_seconds": 25.8
+    "build_seconds": 41.4
   },
   "protocol": {
     "detector": "RandomForestClassifier(n_estimators=300, min_samples_leaf=2)",
@@ -26,10 +26,21 @@
   },
   "single_feature_auc_in_sample": {
     "density": 0.5438,
-    "hub_share": 0.6206,
-    "fanout_share": 0.4722,
-    "relay_share": 0.4814,
-    "reciprocity": 0.5,
+    "hub_share": 0.6207,
+    "fanout_share": 0.4651,
+    "passthrough_share": 0.4333,
+    "sink_share": 0.423,
+    "source_share": 0.5844,
+    "mean_degree": 0.5432,
+    "degree_spread": 0.5083,
+    "transitivity": 0.4105,
+    "component_share": 0.5475,
+    "depth_share": 0.5098,
+    "focal_in_share": 0.5461,
+    "focal_out_share": 0.4182,
+    "focal_is_sink": 0.5402,
+    "focal_is_source": 0.4665,
+    "focal_balance": 0.5464,
     "in_degree": 0.4728,
     "out_degree": 0.4049,
     "case_size": 0.4525
@@ -60,7 +71,7 @@
           "n_train": 10718,
           "n_test": 5359,
           "prevalence": 0.1629,
-          "roc_auc": 0.6944
+          "roc_auc": 0.683
         },
         {
           "fold": 1,
@@ -78,7 +89,7 @@
           "n_train": 16044,
           "n_test": 7345,
           "prevalence": 0.1304,
-          "roc_auc": 0.7511
+          "roc_auc": 0.7462
         },
         {
           "fold": 2,
@@ -114,7 +125,7 @@
           "n_train": 28938,
           "n_test": 8344,
           "prevalence": 0.0853,
-          "roc_auc": 0.6171
+          "roc_auc": 0.6194
         },
         {
           "fold": 4,
@@ -132,18 +143,18 @@
           "n_train": 36591,
           "n_test": 8841,
           "prevalence": 0.0461,
-          "roc_auc": 0.7338
+          "roc_auc": 0.7362
         }
       ],
-      "pooled_roc_auc": 0.6654,
-      "mean_fold_roc_auc": 0.7012,
+      "pooled_roc_auc": 0.6633,
+      "mean_fold_roc_auc": 0.6989,
       "prevalence": 0.1152,
       "operating_point": {
-        "threshold": 0.018086329392928858,
-        "flagged": 6105.0,
-        "recall": 0.9142156862745098,
-        "precision": 0.0610974610974611,
-        "f1": 0.11454015046829419,
+        "threshold": 0.015360241193574528,
+        "flagged": 6307.0,
+        "recall": 0.9240196078431373,
+        "precision": 0.05977485333756144,
+        "f1": 0.11228592702903946,
         "target_recall": 0.8,
         "test_steps": [
           42,
@@ -180,7 +191,7 @@
           "n_train": 10718,
           "n_test": 5359,
           "prevalence": 0.1629,
-          "roc_auc": 0.7221
+          "roc_auc": 0.7311
         },
         {
           "fold": 1,
@@ -198,7 +209,7 @@
           "n_train": 16044,
           "n_test": 7345,
           "prevalence": 0.1304,
-          "roc_auc": 0.7645
+          "roc_auc": 0.7719
         },
         {
           "fold": 2,
@@ -216,7 +227,7 @@
           "n_train": 23606,
           "n_test": 5179,
           "prevalence": 0.2101,
-          "roc_auc": 0.7325
+          "roc_auc": 0.7357
         },
         {
           "fold": 3,
@@ -234,7 +245,7 @@
           "n_train": 28938,
           "n_test": 8344,
           "prevalence": 0.0853,
-          "roc_auc": 0.6784
+          "roc_auc": 0.6769
         },
         {
           "fold": 4,
@@ -252,18 +263,18 @@
           "n_train": 36591,
           "n_test": 8841,
           "prevalence": 0.0461,
-          "roc_auc": 0.7499
+          "roc_auc": 0.7559
         }
       ],
-      "pooled_roc_auc": 0.6964,
-      "mean_fold_roc_auc": 0.7295,
+      "pooled_roc_auc": 0.7002,
+      "mean_fold_roc_auc": 0.7343,
       "prevalence": 0.1152,
       "operating_point": {
-        "threshold": 0.017844849246861312,
-        "flagged": 5896.0,
-        "recall": 0.9093137254901961,
-        "precision": 0.06292401628222524,
-        "f1": 0.1177030456852792,
+        "threshold": 0.01732993153686952,
+        "flagged": 5988.0,
+        "recall": 0.9117647058823529,
+        "precision": 0.06212424849699399,
+        "f1": 0.11632270168855535,
         "target_recall": 0.8,
         "test_steps": [
           42,
@@ -272,13 +283,24 @@
         "prevalence": 0.0461
       }
     },
-    "control_shuffled_labels": {
+    "shape": {
       "features": [
         "density",
         "hub_share",
         "fanout_share",
-        "relay_share",
-        "reciprocity"
+        "passthrough_share",
+        "sink_share",
+        "source_share",
+        "mean_degree",
+        "degree_spread",
+        "transitivity",
+        "component_share",
+        "depth_share",
+        "focal_in_share",
+        "focal_out_share",
+        "focal_is_sink",
+        "focal_is_source",
+        "focal_balance"
       ],
       "folds": [
         {
@@ -297,7 +319,7 @@
           "n_train": 10718,
           "n_test": 5359,
           "prevalence": 0.1629,
-          "roc_auc": 0.5591
+          "roc_auc": 0.6921
         },
         {
           "fold": 1,
@@ -315,7 +337,7 @@
           "n_train": 16044,
           "n_test": 7345,
           "prevalence": 0.1304,
-          "roc_auc": 0.4515
+          "roc_auc": 0.764
         },
         {
           "fold": 2,
@@ -333,7 +355,7 @@
           "n_train": 23606,
           "n_test": 5179,
           "prevalence": 0.2101,
-          "roc_auc": 0.5802
+          "roc_auc": 0.7481
         },
         {
           "fold": 3,
@@ -351,7 +373,7 @@
           "n_train": 28938,
           "n_test": 8344,
           "prevalence": 0.0853,
-          "roc_auc": 0.4915
+          "roc_auc": 0.6461
         },
         {
           "fold": 4,
@@ -369,18 +391,277 @@
           "n_train": 36591,
           "n_test": 8841,
           "prevalence": 0.0461,
-          "roc_auc": 0.51
+          "roc_auc": 0.7252
         }
       ],
-      "pooled_roc_auc": 0.4725,
-      "mean_fold_roc_auc": 0.5185,
+      "pooled_roc_auc": 0.6868,
+      "mean_fold_roc_auc": 0.7151,
       "prevalence": 0.1152,
       "operating_point": {
-        "threshold": 0.02348962248495882,
-        "flagged": 8443.0,
-        "recall": 0.9485294117647058,
-        "precision": 0.045836787871609615,
-        "f1": 0.08744774601739917,
+        "threshold": 0.015416666666666667,
+        "flagged": 6186.0,
+        "recall": 0.9215686274509803,
+        "precision": 0.060782411897833816,
+        "f1": 0.11404306945708219,
+        "target_recall": 0.8,
+        "test_steps": [
+          42,
+          49
+        ],
+        "prevalence": 0.0461
+      }
+    },
+    "shape_plus_local": {
+      "features": [
+        "density",
+        "hub_share",
+        "fanout_share",
+        "passthrough_share",
+        "sink_share",
+        "source_share",
+        "mean_degree",
+        "degree_spread",
+        "transitivity",
+        "component_share",
+        "depth_share",
+        "focal_in_share",
+        "focal_out_share",
+        "focal_is_sink",
+        "focal_is_source",
+        "focal_balance",
+        "in_degree",
+        "out_degree",
+        "case_size"
+      ],
+      "folds": [
+        {
+          "fold": 0,
+          "train_steps": [
+            1,
+            8
+          ],
+          "test_steps": [
+            10,
+            17
+          ],
+          "purged_steps": [
+            9
+          ],
+          "n_train": 10718,
+          "n_test": 5359,
+          "prevalence": 0.1629,
+          "roc_auc": 0.6816
+        },
+        {
+          "fold": 1,
+          "train_steps": [
+            1,
+            16
+          ],
+          "test_steps": [
+            18,
+            25
+          ],
+          "purged_steps": [
+            17
+          ],
+          "n_train": 16044,
+          "n_test": 7345,
+          "prevalence": 0.1304,
+          "roc_auc": 0.7716
+        },
+        {
+          "fold": 2,
+          "train_steps": [
+            1,
+            24
+          ],
+          "test_steps": [
+            26,
+            33
+          ],
+          "purged_steps": [
+            25
+          ],
+          "n_train": 23606,
+          "n_test": 5179,
+          "prevalence": 0.2101,
+          "roc_auc": 0.7422
+        },
+        {
+          "fold": 3,
+          "train_steps": [
+            1,
+            32
+          ],
+          "test_steps": [
+            34,
+            41
+          ],
+          "purged_steps": [
+            33
+          ],
+          "n_train": 28938,
+          "n_test": 8344,
+          "prevalence": 0.0853,
+          "roc_auc": 0.6473
+        },
+        {
+          "fold": 4,
+          "train_steps": [
+            1,
+            40
+          ],
+          "test_steps": [
+            42,
+            49
+          ],
+          "purged_steps": [
+            41
+          ],
+          "n_train": 36591,
+          "n_test": 8841,
+          "prevalence": 0.0461,
+          "roc_auc": 0.7294
+        }
+      ],
+      "pooled_roc_auc": 0.6869,
+      "mean_fold_roc_auc": 0.7144,
+      "prevalence": 0.1152,
+      "operating_point": {
+        "threshold": 0.016108162437025886,
+        "flagged": 6010.0,
+        "recall": 0.9044117647058824,
+        "precision": 0.061397670549084855,
+        "f1": 0.11498909317544406,
+        "target_recall": 0.8,
+        "test_steps": [
+          42,
+          49
+        ],
+        "prevalence": 0.0461
+      }
+    },
+    "control_shuffled_labels": {
+      "features": [
+        "density",
+        "hub_share",
+        "fanout_share",
+        "passthrough_share",
+        "sink_share",
+        "source_share",
+        "mean_degree",
+        "degree_spread",
+        "transitivity",
+        "component_share",
+        "depth_share",
+        "focal_in_share",
+        "focal_out_share",
+        "focal_is_sink",
+        "focal_is_source",
+        "focal_balance"
+      ],
+      "folds": [
+        {
+          "fold": 0,
+          "train_steps": [
+            1,
+            8
+          ],
+          "test_steps": [
+            10,
+            17
+          ],
+          "purged_steps": [
+            9
+          ],
+          "n_train": 10718,
+          "n_test": 5359,
+          "prevalence": 0.1629,
+          "roc_auc": 0.5384
+        },
+        {
+          "fold": 1,
+          "train_steps": [
+            1,
+            16
+          ],
+          "test_steps": [
+            18,
+            25
+          ],
+          "purged_steps": [
+            17
+          ],
+          "n_train": 16044,
+          "n_test": 7345,
+          "prevalence": 0.1304,
+          "roc_auc": 0.4486
+        },
+        {
+          "fold": 2,
+          "train_steps": [
+            1,
+            24
+          ],
+          "test_steps": [
+            26,
+            33
+          ],
+          "purged_steps": [
+            25
+          ],
+          "n_train": 23606,
+          "n_test": 5179,
+          "prevalence": 0.2101,
+          "roc_auc": 0.5685
+        },
+        {
+          "fold": 3,
+          "train_steps": [
+            1,
+            32
+          ],
+          "test_steps": [
+            34,
+            41
+          ],
+          "purged_steps": [
+            33
+          ],
+          "n_train": 28938,
+          "n_test": 8344,
+          "prevalence": 0.0853,
+          "roc_auc": 0.483
+        },
+        {
+          "fold": 4,
+          "train_steps": [
+            1,
+            40
+          ],
+          "test_steps": [
+            42,
+            49
+          ],
+          "purged_steps": [
+            41
+          ],
+          "n_train": 36591,
+          "n_test": 8841,
+          "prevalence": 0.0461,
+          "roc_auc": 0.4754
+        }
+      ],
+      "pooled_roc_auc": 0.4541,
+      "mean_fold_roc_auc": 0.5028,
+      "prevalence": 0.1152,
+      "operating_point": {
+        "threshold": 0.024407407407407405,
+        "flagged": 8471.0,
+        "recall": 0.9362745098039216,
+        "precision": 0.04509503010270334,
+        "f1": 0.08604572587003041,
         "target_recall": 0.8,
         "test_steps": [
           42,
@@ -390,6 +671,6 @@
       }
     }
   },
-  "margin_over_control": 0.1929,
-  "runtime_seconds": 52.7
+  "margin_over_control": 0.2327,
+  "runtime_seconds": 79.7
 }

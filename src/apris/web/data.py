@@ -639,9 +639,14 @@ class Elliptic:
     present: bool = False
 
 
+# Порядок здесь и есть порядок на витрине: сначала первый набор признаков,
+# потом расширенный, потом контроль. Первый оставлен нарочно — без него
+# «стало лучше» нечем подтвердить.
 ELLIPTIC_ARM_LABELS = {
-    "structural": "форма потока",
-    "structural_plus_local": "форма плюс активность узла",
+    "structural": "форма: первый набор, 5 признаков",
+    "structural_plus_local": "первый набор плюс активность узла",
+    "shape": "форма: расширенный набор, 16 признаков",
+    "shape_plus_local": "расширенный набор плюс активность узла",
     "control_shuffled_labels": "контроль: метки перемешаны",
 }
 
@@ -663,7 +668,8 @@ def elliptic() -> tuple[Elliptic, RunMeta]:
         for key in ELLIPTIC_ARM_LABELS
         if key in raw.get("arms", {})
     ]
-    point = (raw.get("arms", {}).get("structural") or {}).get("operating_point") or {}
+    # Рабочая точка берётся у той руки, которой отчитываются.
+    point = (raw.get("arms", {}).get("shape") or {}).get("operating_point") or {}
     return (
         Elliptic(
             dataset=raw.get("dataset", {}),

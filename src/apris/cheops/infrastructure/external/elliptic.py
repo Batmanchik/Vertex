@@ -46,10 +46,13 @@ import io
 import urllib.parse
 import urllib.request
 import zipfile
+from collections.abc import Mapping
 from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 
 import networkx as nx
+import numpy as np
 
 PYG_MIRROR = "https://data.pyg.org/datasets/elliptic"
 DEFAULT_DATA_DIR = Path("data") / "elliptic"
@@ -238,20 +241,27 @@ def neighbourhood(graph: nx.DiGraph, node: str, *, hops: int = 2, cap: int = 400
     Expansion stops at ``cap`` nodes so a hub with tens of thousands of
     neighbours cannot dominate the run.
     """
+    # Порядок обхода сохраняется, и обрезка режет дальних, а не случайных.
+    # Срез неупорядоченного множества выбрасывал соседей первого шага наравне
+    # со вторым, а в 0.1 % дел выбрасывал и сам узел: дело оставалось
+    # построенным вокруг узла, которого в нём нет, вместе с его меткой.
+    order: list[str] = [node]
     seen = {node}
-    frontier = {node}
+    frontier = [node]
     for _ in range(hops):
-        nxt: set[str] = set()
+        nxt: list[str] = []
         for current in frontier:
-            nxt.update(graph.successors(current))
-            nxt.update(graph.predecessors(current))
-            if len(seen) + len(nxt) > cap:
+            for other in chain(graph.successors(current), graph.predecessors(current)):
+                if other not in seen:
+                    seen.add(other)
+                    order.append(other)
+                    nxt.append(other)
+            if len(order) >= cap:
                 break
-        frontier = nxt - seen
-        seen |= nxt
-        if len(seen) >= cap:
+        if len(order) >= cap:
             break
-    return graph.subgraph(list(seen)[:cap]).copy()
+        frontier = nxt
+    return graph.subgraph(order[:cap]).copy()
 
 
 # ==========================================================================
@@ -303,3 +313,109 @@ def structural_features(subgraph: nx.DiGraph) -> dict[str, float]:
         "relay_share": float(relay),
         "reciprocity": float(nx.reciprocity(subgraph) or 0.0),
     }
+
+
+# ==========================================================================
+# Расширенный набор формы
+# ==========================================================================
+#
+# Первый набор писался как перенос признаков симулятора один в один, и на
+# настоящем графе два из пяти оказались мёртвыми:
+#
+#   reciprocity   ноль на 100 % дел — Bitcoin это DAG, заплатить назад в
+#                 прошлое транзакция не может, и взаимность там невозможна
+#                 структурно, а не редка;
+#   relay_share   ноль на 70 % дел — определён через путь между единственным
+#                 максимумом по входу и единственным по выходу, а медианное
+#                 дело здесь состоит из десяти узлов, и такого пути в нём нет.
+#
+# Остаются три признака, из которых тянет один. Ниже — набор, описывающий ту
+# же форму, но не одной точкой: роль самого узла (метка стоит на нём, а
+# прежние признаки о нём не говорили ничего), устройство окрестности и её
+# растянутость во времени. Признаков узла из Elliptic здесь по-прежнему нет:
+# проверяется гипотеза о форме потока, а не «сколько столбцов есть в наборе».
+
+RICH_FEATURE_NAMES: tuple[str, ...] = (
+    # окрестность
+    "density",
+    "hub_share",
+    "fanout_share",
+    "passthrough_share",
+    "sink_share",
+    "source_share",
+    "mean_degree",
+    "degree_spread",
+    "transitivity",
+    "component_share",
+    "depth_share",
+    # роль узла, на котором стоит метка
+    "focal_in_share",
+    "focal_out_share",
+    "focal_is_sink",
+    "focal_is_source",
+    "focal_balance",
+)
+
+# Формы во времени здесь нет, и это свойство набора, а не недосмотр: из
+# 234 355 рёбер Elliptic ни одно не соединяет разные шаги. Набор собран как 49
+# несвязанных снимков, а не как один растущий граф, поэтому у окрестности нет
+# ни размаха по времени, ни прошлого — измерять нечего. Проверено подсчётом,
+# закреплено тестом.
+
+
+def _longest_path(subgraph: nx.DiGraph) -> int:
+    """Глубина цепочки. На не-DAG возвращает 0, а не падает."""
+    try:
+        return int(nx.dag_longest_path_length(subgraph))
+    except (nx.NetworkXUnfeasible, nx.NetworkXError):
+        return 0
+
+
+def rich_features(subgraph: nx.DiGraph, focal: str) -> dict[str, float]:
+    """Форма окрестности и роль узла, на котором стоит метка.
+
+    Все величины приведены к отрезку [0, 1] или к долям, чтобы дело из десяти
+    узлов и дело из четырёхсот сравнивались между собой, а не через размер.
+    """
+    empty = {name: 0.0 for name in RICH_FEATURE_NAMES}
+    size = subgraph.number_of_nodes()
+    edges = subgraph.number_of_edges()
+    if size < 3 or edges < 2 or focal not in subgraph:
+        return empty
+
+    in_degrees = dict(subgraph.in_degree())
+    out_degrees = dict(subgraph.out_degree())
+    total_in = sum(in_degrees.values()) or 1
+    total_out = sum(out_degrees.values()) or 1
+
+    passthrough = sum(1 for n in subgraph if in_degrees[n] and out_degrees[n])
+    sinks = sum(1 for n in subgraph if in_degrees[n] and not out_degrees[n])
+    sources = sum(1 for n in subgraph if out_degrees[n] and not in_degrees[n])
+
+    degrees = np.array([in_degrees[n] + out_degrees[n] for n in subgraph], dtype=float)
+    mean_degree = float(degrees.mean())
+
+    focal_in, focal_out = in_degrees[focal], out_degrees[focal]
+    focal_total = focal_in + focal_out
+
+    values = {
+        "density": float(nx.density(subgraph)),
+        "hub_share": max(in_degrees.values()) / total_in,
+        "fanout_share": max(out_degrees.values()) / total_out,
+        "passthrough_share": passthrough / size,
+        "sink_share": sinks / size,
+        "source_share": sources / size,
+        # Средняя степень делится на размер: иначе признак меряет размер дела.
+        "mean_degree": mean_degree / size,
+        "degree_spread": float(degrees.std() / mean_degree) if mean_degree else 0.0,
+        "transitivity": float(nx.transitivity(subgraph.to_undirected())),
+        "component_share": nx.number_weakly_connected_components(subgraph) / size,
+        "depth_share": _longest_path(subgraph) / size,
+        "focal_in_share": focal_in / total_in,
+        "focal_out_share": focal_out / total_out,
+        "focal_is_sink": float(focal_in > 0 and focal_out == 0),
+        "focal_is_source": float(focal_out > 0 and focal_in == 0),
+        # −1 чистый источник, +1 чистый сток, 0 транзит поровну.
+        "focal_balance": (focal_in - focal_out) / focal_total if focal_total else 0.0,
+    }
+    return values
