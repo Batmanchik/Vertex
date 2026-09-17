@@ -133,6 +133,7 @@ def main() -> int:
     # ячейке, если то же число стоит рядом в прозе. Поэтому таблицы с
     # результатами сверяются поячеечно, по своему заголовку.
     wrong = check_tables(snap)
+    wrong += check_table_references()
     pages, chars, rows = estimate_pages()
 
     print(f"проверено утверждений в тексте: {len(checks)}")
@@ -221,6 +222,31 @@ def estimate_pages() -> tuple[float, int, int]:
     pages = (prose / CHARS_PER_PAGE + rows / ROWS_PER_PAGE
              + 2 + extra_breaks * BREAK_COST)
     return pages, text, rows
+
+
+def check_table_references() -> list[tuple[str, str, str]]:
+    """Ссылка в тексте обязана указывать на существующую таблицу.
+
+    Удаление раздела сдвигает нумерацию, и «обоснование даёт таблица 3»
+    начинает указывать в пустоту или, хуже, в чужую таблицу. Номера считаются
+    при сборке, но ссылки на них написаны словами, и сверять их надо здесь.
+    """
+    import docx
+
+    document = docx.Document(DOC)
+    numbers = set()
+    for par in document.paragraphs:
+        found = re.match(r"Таблица (\d+)\.", par.text.strip())
+        if found:
+            numbers.add(int(found.group(1)))
+
+    wrong: list[tuple[str, str, str]] = []
+    for par in document.paragraphs:
+        for ref in re.findall(r"таблиц[аеуы]\s+(\d+)", par.text):
+            if int(ref) not in numbers:
+                wrong.append((f"ссылка на таблицу {ref}",
+                              f"одну из {sorted(numbers)}", "такой таблицы нет"))
+    return wrong
 
 
 def check_tables(snap: dict) -> list[tuple[str, str, str]]:
