@@ -70,12 +70,25 @@ def test_the_feature_importances_file_is_read_as_a_list() -> None:
     assert len(features) == len(raw)
 
 
+def visible(page: str) -> str:
+    """Страница без данных, положенных в неё для пересчёта.
+
+    В ``<script type="application/json">`` лежат измерения и выгруженная
+    модель — тысячи чисел, которых никто не видит. Проверять на них то, что
+    сказано о видимой части, бессмысленно: лист дерева со значением
+    ``-0.000465`` не «показанная цифра».
+    """
+    return re.sub(
+        r'<script type="application/json".*?</script>', "", page, flags=re.S
+    )
+
+
 def test_a_missing_run_is_named_a_missing_run(monkeypatch: pytest.MonkeyPatch) -> None:
     """Пустой раздел обязан сказать, что прогона нет, а не показать ноль."""
     monkeypatch.setattr(data, "_read_json", lambda name: None)
     page = build()
     assert "прогона нет" in page.lower() or "прогона" in page.lower()
-    assert "0.000" not in page, "нет прогона — нет и правдоподобной цифры"
+    assert "0.000" not in visible(page), "нет прогона — нет и правдоподобной цифры"
 
 
 def test_charts_label_every_value_they_draw() -> None:
@@ -154,6 +167,34 @@ def test_the_page_carries_the_data_its_controls_recompute_from() -> None:
         for edge in graph["edges"]:
             # Ребро в никуда нарисовалось бы обрывком линии.
             assert edge["from"] in ids and edge["to"] in ids
+
+
+def test_the_page_carries_the_model_so_it_works_without_a_server() -> None:
+    """Раздел «Проверить» был единственным, кому нужен был живой сервис.
+
+    Из-за него всю витрину нельзя было положить по ссылке или на флешку. Теперь
+    модель едет в странице, и здесь проверяется, что она доехала целиком: без
+    порядка признаков браузер подставил бы значения не в те деревья, без границ
+    принял бы то, что сервис отвергает, без коэффициента связи выдал бы не
+    вероятность.
+    """
+    page = build()
+    raw = re.search(
+        r"<script type=\"application/json\" id=\"data\">(.*?)</script>", page, re.S
+    )
+    assert raw is not None
+    model = json.loads(raw.group(1))["model"]
+    assert model is not None, "модели в странице нет — «Проверить» не заработает"
+    assert len(model["names"]) == len(model["bounds"]) == 9
+    assert model["sigmoid"] > 0
+    assert model["thresholds"] == {"medium": 0.4, "high": 0.7}
+    assert len(model["trees"]) == 300
+
+    # Порядок величин задаёт модель. Если разметка формы разойдётся с ним,
+    # страница подставит признаки не в те деревья и выдаст правдоподобное
+    # чужое число — молча.
+    for name in model["names"]:
+        assert f"data-name='{name}'" in page, f"величины {name} нет в форме"
 
 
 def test_the_page_never_invents_a_measurement_it_does_not_have() -> None:

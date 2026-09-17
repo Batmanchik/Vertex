@@ -47,6 +47,8 @@ and closing it is what `PLAN.md` §8 orders.
   `artifacts/*.json`. Served by the API at `/` and written to a file by
   `scripts/make_site.py`.
 - `src/apris/web/data.py` - the one reader of the run artifacts.
+- `src/apris/web/model_export.py` - the trained model in a form the browser can
+  walk, so the page scores without a server.
 - `tests/` - pytest-based test suite (`unit`, `api`, `smoke`).
 
 ## Runtime vs Source Directories
@@ -165,8 +167,22 @@ python scripts/make_site.py
 
 Writes `artifacts/site/index.html`: the same page, self-contained — no server,
 no network, no fonts to fetch, images embedded. Open it by double-clicking,
-from a memory stick, on someone else's laptop with the wi-fi off. Everything
-works except the live scoring form, which needs the service and says so.
+from a memory stick, on someone else's laptop with the wi-fi off.
+
+Everything works there, the scoring form included. The v1 model is gradient
+boosting over 300 trees of depth 6 — thresholds and numbers, nothing a browser
+cannot walk — so `src/apris/web/model_export.py` dumps the trees into the page
+and the browser scores. It is the model, not an approximation of it: the export
+is checked against `predict_proba` on 500 random points and on the bounds of
+every feature, and agrees to within 1e-5. A split shape the walk cannot
+reproduce fails the build rather than quietly scoring something else.
+
+## The same page on the web
+
+Published from `main` to <https://batmanchik.github.io/Vertex/> by
+`.github/workflows/site.yml`. The workflow runs the site tests before it
+publishes: a showcase that silently reads "no run" is worse than no showcase,
+because nobody double-checks the one they were given a link to.
 
 ## The queue on its own
 

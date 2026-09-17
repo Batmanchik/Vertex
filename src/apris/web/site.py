@@ -829,12 +829,36 @@ function renderEvasion(){
     : '<div><b>не измерялась</b><span>такой конфигурации в прогоне не было</span></div>';
 }
 
-// ── живая оценка: движение регулятора пересчитывает ответ сервиса ──────
+// ── модель: те же 300 деревьев, что и в сервисе, только их обходит браузер ──
+// Узел — [признак, порог, левое, правое], лист — число. Больше для ответа
+// ничего не нужно, поэтому раздел «Проверить» работает и без сервера.
+function runModel(values){
+  var model = DATA.model;
+  if (!model) return null;
+  var total = 0;
+  for (var i = 0; i < model.trees.length; i++){
+    var node = model.trees[i];
+    while (Array.isArray(node)){ node = values[node[0]] <= node[1] ? node[2] : node[3]; }
+    total += node;
+  }
+  return 1 / (1 + Math.exp(-model.sigmoid * total));
+}
+
+function riskLabel(probability){
+  var t = DATA.model.thresholds;
+  if (probability >= t.high) return 'High';
+  if (probability >= t.medium) return 'Medium';
+  return 'Low';
+}
+
+// ── живая оценка: движение регулятора пересчитывает ответ модели ───────
 function setupManual(){
   var form = el('manual'), result = el('manual-out');
   if (!form || !result) return;
-  var live = location.protocol.indexOf('http') === 0;
-  var timer = null;
+  if (!DATA.model){
+    result.textContent = 'Модели в сборке нет: проверять нечем.';
+    return;
+  }
 
   function show(){
     form.querySelectorAll('input[data-name]').forEach(function(input){
@@ -842,35 +866,24 @@ function setupManual(){
       if (target) target.textContent = input.value;
     });
   }
-  function send(){
-    if (!live){
-      result.textContent = 'Страница открыта файлом: считать некому. Запустите python scripts/serve.py';
-      return;
-    }
-    var payload = {};
-    form.querySelectorAll('input[data-name]').forEach(function(input){
-      payload[input.dataset.name] = parseFloat(input.value);
+  function run(){
+    // Порядок величин задаёт модель, а не разметка: перепутанные местами
+    // признаки дали бы правдоподобное и неверное число.
+    var values = DATA.model.names.map(function(name, index){
+      var input = form.querySelector('input[data-name="' + name + '"]');
+      var bounds = DATA.model.bounds[index];
+      var value = input ? parseFloat(input.value) : bounds[0];
+      return Math.max(bounds[0], Math.min(bounds[1], value));
     });
-    fetch('/api/v1/predict', {method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)})
-      .then(function(response){
-        if (!response.ok) throw new Error('сервис ответил ' + response.status);
-        return response.json();
-      })
-      .then(function(data){
-        result.innerHTML = '<b>' + (data.probability * 100).toFixed(1) + ' %</b>класс ' +
-          (data.label_text || '') + ' · пороги 0.4 / 0.7';
-      })
-      .catch(function(error){ result.textContent = error.message; });
+    var probability = runModel(values);
+    result.innerHTML = '<b>' + (probability * 100).toFixed(1) + ' %</b>класс ' +
+      riskLabel(probability) + ' · пороги ' + DATA.model.thresholds.medium +
+      ' / ' + DATA.model.thresholds.high;
   }
-  form.addEventListener('input', function(){
-    show();
-    clearTimeout(timer);
-    timer = setTimeout(send, 200);
-  });
-  form.addEventListener('submit', function(event){ event.preventDefault(); send(); });
+  form.addEventListener('input', function(){ show(); run(); });
+  form.addEventListener('submit', function(event){ event.preventDefault(); run(); });
   show();
-  send();
+  run();
 }
 
 // ── общая проводка регуляторов ────────────────────────────────────────
@@ -1201,9 +1214,11 @@ def sec_manual(snap: dict[str, Any]) -> str:
     )
     return section(
         "manual", "Проверить",
-        "Девять величин уходят в <code>/api/v1/predict</code> того же процесса; ответ "
-        "обновляется при движении любого регулятора. Работает при открытии с локального "
-        "сервера.",
+        "Девять величин уходят в модель, ответ обновляется при движении любого "
+        "регулятора. Считает сама страница: обученная модель — градиентный бустинг "
+        "на 300 деревьях глубины 6, то есть набор порогов, и браузер обходит их "
+        "сам. Тот же расчёт отдаёт <code>/api/v1/predict</code>; расхождение между "
+        "страницей и сервисом проверяется тестом и не превышает 1e-5.",
         f"<form id='manual' class='form'>{fields}</form>"
         "<div id='manual-out' class='out'></div>"
         + limit("Пороги 0.4 и 0.7 в ответе зашиты в старом движке и не калиброваны под "
@@ -1211,7 +1226,8 @@ def sec_manual(snap: dict[str, Any]) -> str:
                 "«Валидация».")
         + limit("Ручки стоят в точке, где движок даёт около половины. В стороне от неё "
                 "ответ упирается в ноль или единицу и перестаёт отзываться на сдвиг: "
-                "это свойство старого движка, а не измерение."),
+                "это свойство старого движка, а не измерение.")
+        + source("artifacts/model.joblib"),
     )
 
 
@@ -1728,6 +1744,7 @@ def payload(snap: dict[str, Any]) -> str:
         ],
         "cases": cases,
         "feature_ru": FEATURE_RU,
+        "model": D.scorer(),
     }
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 

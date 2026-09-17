@@ -759,6 +759,37 @@ def branches() -> list[Branch]:
     return out
 
 
+def scorer() -> dict[str, Any] | None:
+    """Модель в форме, которую считает браузер, или ``None``, если её нет.
+
+    Единственное место витрины, где в страницу едет не измерение, а сама
+    модель. Без неё раздел «Проверить» скажет, что модели нет, — как и любой
+    другой раздел без своего файла прогона.
+    """
+    path = ARTIFACTS / "model.joblib"
+    if not path.exists():
+        return None
+    # Внутри функции: joblib тянет за собой numpy и scipy, а витрина без
+    # модели должна собираться и на машине, где их не ставили.
+    import warnings
+
+    import joblib
+
+    from apris.web.model_export import export_model
+
+    try:
+        with warnings.catch_warnings():
+            # Модель обучена другой версией sklearn. На дамп деревьев это не
+            # влияет, а тест сверки поймал бы, если бы влияло.
+            warnings.simplefilter("ignore")
+            model = joblib.load(path)
+        return export_model(model.booster_)
+    except Exception:
+        # Сломанная или незнакомая модель — это «модели нет», а не молча
+        # другое число на экране.
+        return None
+
+
 def snapshot() -> dict[str, Any]:
     """Всё сразу — то, что рендерит витрина."""
     world_rows, world_meta = worlds()

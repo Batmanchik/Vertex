@@ -1,0 +1,75 @@
+name: site
+
+# Витрина по ссылке. Страница целиком статическая: измерения и сама модель
+# кладутся в неё при сборке, поэтому Pages достаточно — сервер не нужен.
+#
+# Собирается из main при каждом изменении того, что на странице видно:
+# кода витрины, файлов прогонов или модели. Прогоны здесь не запускаются —
+# публикуется то, что лежит в репозитории, и ничего сверх этого.
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/apris/web/**"
+      - "src/apris/risk_engine.py"
+      - "src/apris/data_generator.py"
+      - "artifacts/*.json"
+      - "artifacts/model.joblib"
+      - "artifacts/figures/**"
+      - "scripts/make_site.py"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Две сборки подряд не должны обгонять друг друга: публикуется последняя.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      # Опубликованная витрина, которая молча говорит «прогона нет», хуже
+      # неопубликованной: на защите её открывают, не перепроверяя. Те же
+      # тесты, что стерегут страницу в CI, стерегут и публикацию.
+      - name: Check the page before publishing it
+        run: python -m pytest tests/unit/test_site.py tests/unit/test_model_export.py -q
+
+      - name: Build
+        run: python scripts/make_site.py
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

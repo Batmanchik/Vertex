@@ -57,10 +57,13 @@ jobs:
       - name: Build and start containers
         run: docker compose up -d --build
 
-      - name: Wait for API and UI health
+      # Один процесс, один адрес. Проверка порта 8501 осталась здесь от
+      # интерфейса на Streamlit, которого больше нет: она ждала бы две минуты
+      # и роняла сборку по таймауту.
+      - name: Wait for API health
         run: |
           for i in $(seq 1 60); do
-            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null && curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
               echo "Containers are healthy"
               exit 0
             fi
@@ -69,6 +72,9 @@ jobs:
           echo "Health check timed out"
           docker compose logs
           exit 1
+
+      - name: The site is served by the same process
+        run: curl -fsS http://127.0.0.1:8000/ | grep -q "<section id=\"overview\""
 
       - name: v2 model details smoke
         run: curl -fsS http://127.0.0.1:8000/api/v2/health/model/details > /tmp/health_details.json
