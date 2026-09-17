@@ -133,9 +133,17 @@ def main() -> int:
     # ячейке, если то же число стоит рядом в прозе. Поэтому таблицы с
     # результатами сверяются поячеечно, по своему заголовку.
     wrong = check_tables(snap)
+    pages, chars, rows = estimate_pages()
 
     print(f"проверено утверждений в тексте: {len(checks)}")
     print(f"проверено ячеек таблиц:         {CELLS_CHECKED[0]}")
+    print(f"объём: {chars} символов, {rows} строк таблиц "
+          f"→ около {pages:.1f} страниц при пределе {MAX_PAGES}")
+
+    if pages > MAX_PAGES:
+        print(f"ПРЕВЫШЕН ПРЕДЕЛ ОБЪЁМА: {pages:.1f} > {MAX_PAGES}")
+        return 1
+
     if missing or wrong:
         if missing:
             print(f"НЕ НАЙДЕНО В ТЕКСТЕ: {len(missing)}")
@@ -151,6 +159,51 @@ def main() -> int:
 
 
 CELLS_CHECKED = [0]
+
+# Предел объёма задан требованиями к работе: не более двадцати страниц.
+MAX_PAGES = 20
+
+# Откалибровано по предыдущей версии работы целиком: 28 472 символа прозы,
+# 19 строк таблиц, 12 заголовков, 134 абзаца — и 22 страницы по её же
+# оглавлению. Подстановка этих величин в формулу ниже даёт 1741 символ на
+# страницу при Times New Roman 14 и полуторном интервале.
+CHARS_PER_PAGE = 1741
+ROWS_PER_PAGE = 46
+
+# Заголовок и отступ между абзацами занимают высоту, но почти не содержат
+# символов, поэтому считать один текст мало. Ниже — их стоимость, выраженная
+# в символах прозы: строка при 14 пунктах и полуторном интервале вмещает
+# около 75 знаков, отступы до и после заголовка пересчитаны в такие строки.
+HEADING_COST = {1: 190, 2: 165, 3: 145}
+PARAGRAPH_COST = 25   # отступ после каждого абзаца
+
+
+def estimate_pages() -> tuple[float, int, int]:
+    """Оценка числа страниц без отрисовки.
+
+    LibreOffice в среде сборки не работает, а требование к объёму жёсткое,
+    поэтому объём считается расчётом. Оценка нарочно осторожная: она должна
+    ловить выход за предел, а не точно предсказывать вёрстку.
+    """
+    import docx
+
+    document = docx.Document(DOC)
+    text = sum(len(par.text) for par in document.paragraphs)
+    rows = sum(len(t.rows) for t in document.tables)
+    table_text = sum(len(c.text) for t in document.tables for r in t.rows for c in r.cells)
+
+    overhead = 0
+    for par in document.paragraphs:
+        style = par.style.name if par.style is not None else ""
+        if style.startswith("Heading"):
+            overhead += HEADING_COST.get(int(style.split()[-1]), 145)
+        elif par.text.strip():
+            overhead += PARAGRAPH_COST
+
+    # Титульный лист и оглавление занимают по странице каждый.
+    prose = text - table_text + overhead
+    pages = prose / CHARS_PER_PAGE + rows / ROWS_PER_PAGE + 2
+    return pages, text, rows
 
 
 def check_tables(snap: dict) -> list[tuple[str, str, str]]:
