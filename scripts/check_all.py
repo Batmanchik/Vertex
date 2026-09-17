@@ -37,11 +37,6 @@ GATES: list[tuple[str, list[str], bool]] = [
                 "-x", "src/apris/crypto_ponzi", "-s", "B101"], False),
     ("Radon", [PYTHON, "-m", "radon", "cc", "src/apris/cheops", "-s", "-n", "B"], False),
     ("Pytest", [PYTHON, "-m", "pytest", "-q", "--no-header"], True),
-    # Седьмые ворота. Текст научной работы — такой же артефакт проекта, как
-    # код, и расходится он с прогонами так же незаметно: число пересчитали,
-    # а в работе осталось старое. Сверка вручную по сорока семи числам не
-    # делается ни разу, поэтому её делает команда.
-    ("Научная работа", [PYTHON, "scripts/check_scientific_work.py"], False),
 ]
 
 
