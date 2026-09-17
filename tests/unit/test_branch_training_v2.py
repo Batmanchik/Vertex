@@ -26,6 +26,9 @@ from apris.cheops.infrastructure.ml.branch_training_v2 import (
     leave_one_world_out,
     pool_branch_measurement,
     time_ordered_split,
+    train_branch,
+    train_branches,
+    train_branches_over_worlds,
 )
 from apris.cheops.infrastructure.ml.graph_v2 import (
     DEFAULT_GRAPH_MODEL_PARAMS,
@@ -170,3 +173,89 @@ def test_the_heuristic_is_the_one_the_service_falls_back_to():
     assert _heuristic_score(frame, SEQUENCE_HEURISTIC_WEIGHTS)[0] == pytest.approx(1.0)
     assert sum(SEQUENCE_HEURISTIC_WEIGHTS.values()) == pytest.approx(1.0)
     assert sum(GRAPH_HEURISTIC_WEIGHTS.values()) == pytest.approx(1.0)
+
+
+# ── Само обучение ────────────────────────────────────────────────────────
+#
+# Выше проверены разбиение, сведение нескольких прогонов и эвристика. Само
+# обучение до сих пор проверялось только через ``leave_one_world_out``, то есть
+# через одну из двух точек входа. Ниже — вторые две, и главное свойство
+# объединения миров: каждый мир режется по своим часам.
+
+
+def _both(rows: int = 60, *, seed: int = 0):
+    """Мир с признаками обеих ветвей: метку несёт по одному признаку в каждой."""
+    rng = np.random.default_rng(seed)
+    labels = (rng.random(rows) < 0.3).astype(int)
+    carriers = {"graph_hub_share", SEQUENCE_FEATURE_NAMES[0]}
+    frame = pd.DataFrame(
+        {
+            name: rng.random(rows) * 0.2 + (0.7 if name in carriers else 0.0) * labels
+            for name in list(GRAPH_FEATURE_NAMES) + list(SEQUENCE_FEATURE_NAMES)
+        }
+    )
+    return frame, labels, _stamps(rows)
+
+
+def test_one_branch_is_priced_against_the_heuristic_it_replaces():
+    """Модель без цены — это не результат: её не с чем сравнить.
+
+    Ветвь заменяет конкретную эвристику, и число, которое она стоит, — это
+    разница с этой эвристикой на тех же отложенных строках, а не абсолютный
+    ROC-AUC сам по себе.
+    """
+    frame, labels, stamps = _world(rows=120, seed=3)
+    fit = train_branch(
+        frame,
+        labels,
+        time_ordered_split(stamps),
+        feature_names=GRAPH_FEATURE_NAMES,
+        model_params=DEFAULT_GRAPH_MODEL_PARAMS,
+        heuristic_weights=GRAPH_HEURISTIC_WEIGHTS,
+        artifact_version="test-graph",
+        seed=1,
+    )
+    assert fit.artifact["artifact_version"] == "test-graph"
+    assert list(fit.artifact["feature_names"]) == list(GRAPH_FEATURE_NAMES)
+    # Оценки и метки отложенной части едут вместе с моделью: без них несколько
+    # миров не свести в одно измерение.
+    assert len(fit.test_scores) == len(fit.test_labels) == len(fit.heuristic_scores)
+    assert fit.metrics["roc_auc"] > 0.9, "посаженный сигнал обязан найтись"
+    # Цена ветви — это разница с эвристикой, и она обязана быть записана.
+    assert fit.metrics["lift_over_heuristic"] == pytest.approx(
+        fit.metrics["roc_auc"] - fit.metrics["heuristic_roc_auc"]
+    )
+
+
+def test_training_both_branches_reads_only_its_own_columns():
+    """Ветви делят одну таблицу, и каждая обязана брать из неё своё.
+
+    Если ветвь однажды начнёт читать чужие столбцы, артефакт разойдётся с тем,
+    что ей подают в сервисе, — и это будет видно не здесь, а в проде.
+    """
+    frame, labels, stamps = _both(rows=120, seed=5)
+    fits = train_branches(frame, labels, stamps, seed=1)
+
+    assert set(fits) == {"graph", "sequence"}
+    assert list(fits["graph"].artifact["feature_names"]) == list(GRAPH_FEATURE_NAMES)
+    assert list(fits["sequence"].artifact["feature_names"]) == list(SEQUENCE_FEATURE_NAMES)
+
+
+def test_pooling_worlds_splits_each_one_by_its_own_clock():
+    """Обещание из докстринга ``train_branches_over_worlds``, записанное тестом.
+
+    Миры склеиваются срезами, а не строками: если склеить строки и резать по
+    общим часам, поздние строки первого мира окажутся в обучении вместе с
+    ранними строками второго — утечка через границу времени, которую ни одна
+    метрика не покажет.
+    """
+    worlds = [_both(rows=80, seed=seed) for seed in range(3)]
+    fits = train_branches_over_worlds(worlds, seed=1)
+
+    for fit in fits.values():
+        assert fit.metrics["worlds"] == 3
+
+    # Отложенная часть объединения — это ровно сумма отложенных частей миров.
+    per_world = sum(len(time_ordered_split(stamps).test) for _, _, stamps in worlds)
+    assert len(fits["graph"].test_labels) == per_world
+    assert len(fits["sequence"].test_labels) == per_world

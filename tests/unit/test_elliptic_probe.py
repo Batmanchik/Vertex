@@ -18,6 +18,7 @@ import pytest
 
 from apris.cheops.infrastructure.experiments.elliptic_probe import (
     CaseRow,
+    _arm_report,
     _step_blocks,
     operating_point,
     single_feature_auc,
@@ -121,6 +122,60 @@ def test_a_constant_column_scores_exactly_a_coin_flip():
         CaseRow(node="b", time_step=1, label=0, features={"density": 0.5, "hub_share": 0.2}),
     ]
     assert single_feature_auc(rows, ["density"])["density"] == pytest.approx(0.5)
+
+
+# ── Отчёт руки ───────────────────────────────────────────────────────────
+#
+# Выше проверены разбиение, порог и признаки по отдельности. Отчёт собирает их
+# в то, что читает витрина, и по дороге назначает рабочую точку. Именно это
+# число попадает на экран, и именно здесь его легче всего испортить незаметно.
+
+
+def _report(**kwargs):
+    return _arm_report(
+        _rows(),
+        FEATURES,
+        seed=1,
+        n_splits=3,
+        purge_steps=1,
+        target_recall=0.8,
+        **kwargs,
+    )
+
+
+def test_the_arm_report_carries_every_field_the_showcase_reads():
+    report = _report()
+    assert report["features"] == list(FEATURES)
+    assert len(report["folds"]) == 3
+    for fold in report["folds"]:
+        # Складки обязаны называть, что выкинуто карантином: без этого по
+        # отчёту нельзя отличить честный прогон от прогона без карантина.
+        assert set(fold) >= {"train_steps", "test_steps", "purged_steps", "n_train", "n_test"}
+        assert not set(fold["train_steps"]) & set(fold["test_steps"])
+        assert not set(fold["purged_steps"]) & set(fold["train_steps"])
+    assert report["pooled_roc_auc"] > 0.8, "посаженный сигнал обязан найтись"
+    assert 0.0 < report["prevalence"] < 1.0
+
+
+def test_the_operating_point_is_priced_on_folds_the_model_has_not_seen():
+    """Порог, снятый с той же складки, к которой применён, ничего не стоит.
+
+    Отчёт обязан взять его с ранних складок и применить к последней — иначе
+    рабочая точка на витрине описывает данные, а не будущее.
+    """
+    report = _report()
+    point = report["operating_point"]
+    assert point["target_recall"] == 0.8
+    assert point["test_steps"] == report["folds"][-1]["test_steps"]
+    assert set(point) >= {"recall", "precision"}
+
+
+def test_shuffling_the_labels_costs_the_report_its_signal():
+    """Контрольная рука — это тот же отчёт, у которого отняли связь с меткой."""
+    honest = _report()["pooled_roc_auc"]
+    shuffled = _report(shuffle_labels=True)["pooled_roc_auc"]
+    assert shuffled < honest
+    assert shuffled == pytest.approx(0.5, abs=0.15)
 
 
 def test_time_steps_come_from_the_cache_without_touching_the_network(tmp_path):
