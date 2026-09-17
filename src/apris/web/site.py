@@ -1347,11 +1347,15 @@ def sec_rarity(snap: dict[str, Any]) -> str:
          f"{r.reviews_per_catch:.0f}" if r.reviews_per_catch else "—"]
         for r in rows
     ]
-    point_rows = [
-        [pct(p.recall, 0), f"{p.alerts_per_1000:.1f}", num(p.precision, 3),
-         f"{p.reviews_per_catch:.0f}"]
-        for p in points
-    ]
+    def point_table(items: list[D.Point]) -> list[list[str]]:
+        return [
+            [pct(p.recall, 0), f"{p.alerts_per_1000:.1f}", num(p.precision, 3),
+             f"{p.reviews_per_catch:.1f}"]
+            for p in items
+        ]
+
+    point_rows = point_table(points)
+    projected_rows = point_table(snap["projected"])
     return section(
         "rarity", "Редкость",
         "Мошенники прореживаются до разбиения, поэтому модель и обучается, и проверяется "
@@ -1376,8 +1380,18 @@ def sec_rarity(snap: dict[str, Any]) -> str:
         + ("<h3>Порог вместо бюджета: измеренные точки</h3>"
            + table(["поймать дропов", "сигналов на 1000 счетов", "точность",
                     "проверок на находку"], point_rows,
-                   caption="Прогон при доле мошенников 0.1 %")
+                   caption="Измерено на естественной доле мошенников этого мира — "
+                           f"{pct(points[0].prevalence, 1)}, три сида")
            if point_rows else "")
+        + ("<h3>Тот же порог, перенесённый на 0.1 % мошенников</h3>"
+           + table(["поймать дропов", "сигналов на 1000 счетов", "точность",
+                    "проверок на находку"], projected_rows,
+                   caption="Пересчёт измеренной кривой, а не отдельный прогон")
+           + limit("Это перенос, а не измерение. Детектор тот же и кривая та же; "
+                   "меняется доля мошенников, из которой считается точность. "
+                   "Подписать перенос измерением значило бы соврать в ту сторону, "
+                   "которая красивее.")
+           if projected_rows else "")
         + limit("Ячейка 0.1 % стоит на 13 мошеннических строках, разброс по сидам там "
                 "0.842–0.997. Редкость получена прореживанием: окружение оставшегося "
                 "мошенника осталось прежним.")

@@ -485,30 +485,50 @@ class Point:
     reviews_per_catch: float
 
 
+def _points_from(runs: Sequence[dict[str, Any]]) -> list[Point]:
+    """Точки порога, усреднённые по сидам: первая — половина дропов, вторая — хвост."""
+    groups: dict[int, list[dict[str, Any]]] = {}
+    for run in runs:
+        for i, p in enumerate(run.get("operating_points", [])):
+            groups.setdefault(i, []).append(p)
+    return [
+        Point(
+            prevalence=_mean([p["prevalence"] for p in ps]) or 0.0,
+            alerts_per_1000=_mean([p["alerts_per_1000_accounts"] for p in ps]) or 0.0,
+            precision=_mean([p["precision"] for p in ps]) or 0.0,
+            recall=_mean([p["recall"] for p in ps]) or 0.0,
+            reviews_per_catch=_mean([p["reviews_per_catch"] for p in ps]) or 0.0,
+        )
+        for _, ps in sorted(groups.items())
+    ]
+
+
 def operating_points() -> tuple[list[Point], RunMeta]:
+    """Точки порога на естественной доле мошенников — там, где они измерены."""
     raw = _load("prevalence_sweep.json")
     meta = _meta(raw, "artifacts/prevalence_sweep.json")
     if not raw:
         return [], meta
+    return _points_from(raw.get("natural", [])), meta
 
-    groups: dict[int, list[dict[str, Any]]] = {}
-    for run in raw.get("natural", []):
-        for i, p in enumerate(run.get("operating_points", [])):
-            groups.setdefault(i, []).append(p)
 
-    return (
-        [
-            Point(
-                prevalence=_mean([p["prevalence"] for p in ps]) or 0.0,
-                alerts_per_1000=_mean([p["alerts_per_1000_accounts"] for p in ps]) or 0.0,
-                precision=_mean([p["precision"] for p in ps]) or 0.0,
-                recall=_mean([p["recall"] for p in ps]) or 0.0,
-                reviews_per_catch=_mean([p["reviews_per_catch"] for p in ps]) or 0.0,
-            )
-            for _, ps in sorted(groups.items())
-        ],
-        meta,
-    )
+def projected_points(prevalence: float = 0.001) -> list[Point]:
+    """Те же точки, пересчитанные на заданную редкость.
+
+    Разница с :func:`operating_points` — не в детекторе, а в том, что
+    измерено, и её нельзя стирать: «естественная» ветка измерена на мире, где
+    мошенников около семи процентов, а эта — арифметический перенос той же
+    кривой на долю, при которой антифрод работает в жизни. Подписать перенос
+    измерением значит соврать в ту сторону, которая красивее.
+    """
+    raw = _load("prevalence_sweep.json")
+    if not raw:
+        return []
+    runs = [
+        run for run in raw.get("projected", [])
+        if abs(float(run.get("prevalence", -1)) - prevalence) < 1e-9
+    ]
+    return _points_from(runs)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -812,6 +832,7 @@ def snapshot() -> dict[str, Any]:
         "matrix": mm, "matrix_meta": mm_meta,
         "blocks": bl, "blocks_meta": bl_meta,
         "points": op, "points_meta": op_meta,
+        "projected": projected_points(0.001),
         "worlds": world_rows,
         "worlds_meta": world_meta,
         "evasion": evasion_rows,

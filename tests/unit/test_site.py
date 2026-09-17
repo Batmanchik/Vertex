@@ -16,7 +16,7 @@ import re
 import pytest
 
 from apris.web import data
-from apris.web.site import Bar, Line, build, chart_bars, chart_line, esc, table
+from apris.web.site import Bar, Line, build, chart_bars, chart_line, esc, pct, table
 
 
 def test_the_page_builds_and_carries_every_section() -> None:
@@ -195,6 +195,40 @@ def test_the_page_carries_the_model_so_it_works_without_a_server() -> None:
     # чужое число — молча.
     for name in model["names"]:
         assert f"data-name='{name}'" in page, f"величины {name} нет в форме"
+
+
+def test_a_projection_is_never_shown_as_a_measurement() -> None:
+    """Кусачий тест на то, чем витрина врала две недели.
+
+    Таблица точек порога читала прогоны при естественной доле мошенников этого
+    мира — около семи процентов, — а подпись под ней утверждала 0.1 %. Числа
+    были настоящие, подпись выдуманная, и врала она в ту сторону, которая
+    красивее: при 0.1 % те же пороги стоят совсем других сигналов.
+
+    Поэтому здесь проверяется не наличие таблиц, а то, что каждая названа своей
+    долей и что перенос назван переносом.
+    """
+    points, _ = data.operating_points()
+    projected = data.projected_points(0.001)
+    assert points and projected, "развёртки по редкости нет — тест не о чем"
+    assert points[0].prevalence > 0.01, (
+        "фикстура изменилась: естественная доля должна быть заметно выше 0.1 %, "
+        "иначе тест перестаёт различать измерение и перенос"
+    )
+    assert projected[0].prevalence == pytest.approx(0.001)
+
+    # Проверяется подпись под самой таблицей, а не страница целиком: доля
+    # «7.0 %» есть и в соседней таблице редкости, и на ней тест прошёл бы,
+    # не заметив вранья в подписи.
+    page = visible(build())
+    measured = page.split("Порог вместо бюджета", 1)[1].split("</figure>", 1)[0]
+    caption = measured.split("<figcaption", 1)[1]
+
+    assert pct(points[0].prevalence, 1) in caption, "измерение не названо своей долей"
+    assert pct(projected[0].prevalence, 1) not in caption, (
+        "измерение подписано долей, при которой оно не проводилось"
+    )
+    assert "Пересчёт измеренной кривой" in page, "перенос не назван переносом"
 
 
 def test_the_page_never_invents_a_measurement_it_does_not_have() -> None:
