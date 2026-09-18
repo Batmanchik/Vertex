@@ -289,3 +289,33 @@ def test_the_atlas_places_a_case_among_real_ones() -> None:
     assert len(atlas["histogram"]["illicit"]) == atlas["bins"]
     assert sum(atlas["histogram"]["illicit"]) == atlas["cases"]["illicit"]
     assert thousands(atlas["cases"]["illicit"]) in section_html
+
+
+def test_the_population_map_matches_the_controls_that_move_it() -> None:
+    """Карта и регуляторы «Проверить» обязаны говорить об одних величинах.
+
+    Точку считает браузер: нормировка, центр и две компоненты едут в
+    страницу. Если порядок или состав признаков разойдётся с формой, точка
+    поедет по чужим осям — правдоподобно и неверно.
+    """
+    page = build()
+    section_html = page[page.index('<section id="manual"') :]
+    section_html = section_html[: section_html.index("</section>")]
+    assert "map-chart" in section_html, "карта из раздела пропала"
+
+    body = json.loads(
+        re.search(
+            r"<script type=\"application/json\" id=\"data\">(.*?)</script>", page, re.S
+        ).group(1)
+    )
+    carte = body["map"]
+    assert carte is not None, "карты в странице нет"
+    assert len(carte["points"]) == carte["cases"]["total"] == 4000
+
+    names = set(re.findall(r"data-name='([^']+)'", section_html))
+    assert set(carte["features"]) <= names, "карта ждёт величину, которой нет на форме"
+    for key in ("mean", "scale", "center", "components"):
+        assert key in carte["transform"], f"в преобразовании нет {key}"
+    assert len(carte["transform"]["components"]) == 2
+    for row in carte["transform"]["components"]:
+        assert len(row) == len(carte["features"])

@@ -794,6 +794,15 @@ def atlas() -> dict[str, Any] | None:
     return _load("case_atlas.json")
 
 
+def population_map() -> dict[str, Any] | None:
+    """Карта популяции: 4 000 дел полигона на плоскости и само преобразование.
+
+    Собирается scripts/make_population_map.py. Кроме точек в файле лежит
+    вся арифметика PCA, чтобы точку нового дела считал браузер.
+    """
+    return _load("population_map.json")
+
+
 def scorer() -> dict[str, Any] | None:
     """Модель в форме, которую считает браузер, или ``None``, если её нет.
 

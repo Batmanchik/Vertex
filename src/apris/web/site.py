@@ -876,6 +876,14 @@ function setupManual(){
       return Math.max(bounds[0], Math.min(bounds[1], value));
     });
     var probability = runModel(values);
+    // Карта берёт величины в своём порядке: у модели и у PCA он может не
+    // совпадать, а перепутанные признаки дали бы правдоподобную и неверную точку.
+    if (DATA.map){
+      drawMap(DATA.map.features.map(function(name){
+        var input = form.querySelector('input[data-name="' + name + '"]');
+        return input ? parseFloat(input.value) : 0;
+      }));
+    }
     result.innerHTML = '<b>' + (probability * 100).toFixed(1) + ' %</b>класс ' +
       riskLabel(probability) + ' · пороги ' + DATA.model.thresholds.medium +
       ' / ' + DATA.model.thresholds.high;
@@ -884,6 +892,67 @@ function setupManual(){
   form.addEventListener('submit', function(event){ event.preventDefault(); run(); });
   show();
   run();
+}
+
+// ── карта популяции: проекция того же дела в плоскость PCA ────────────
+// Преобразование лежит в странице целиком: нормировка, центр и две главные
+// компоненты. Проекция — вычитание, деление и два скалярных произведения,
+// так что точка двигается вместе с регуляторами, без обращения к серверу.
+var MAP_BASE = null;
+
+function drawMap(values){
+  var map = DATA.map, chart = el('map-chart');
+  if (!map || !chart) return;
+  var W = 640, H = 380, pad = 18;
+  var bx = map.bounds.x, by = map.bounds.y;
+  var spanX = bx[1] - bx[0] || 1, spanY = by[1] - by[0] || 1;
+  function px(x){ return pad + (W - pad * 2) * (x - bx[0]) / spanX; }
+  function py(y){ return H - pad - (H - pad * 2) * (y - by[0]) / spanY; }
+
+  if (MAP_BASE === null){
+    var css = ['s1', 's2', 's3'], parts = [];
+    for (var i = 0; i < map.points.length; i++){
+      var point = map.points[i];
+      parts.push('<circle class="' + css[point[2]] + '" cx="' + px(point[0]).toFixed(1) +
+        '" cy="' + py(point[1]).toFixed(1) + '" r="' + (point[2] === 2 ? 2.4 : 1.7) +
+        '" opacity="' + (point[2] === 2 ? 0.85 : 0.45) + '"></circle>');
+    }
+    MAP_BASE = parts.join('');
+  }
+
+  // z = (v - mean) / scale, затем скалярное произведение с компонентами.
+  var z = values.map(function(v, i){
+    return (v - map.transform.mean[i]) / (map.transform.scale[i] || 1);
+  });
+  var out = [0, 1].map(function(axis){
+    var total = 0;
+    for (var i = 0; i < z.length; i++){
+      total += (z[i] - map.transform.center[i]) * map.transform.components[axis][i];
+    }
+    return total;
+  });
+  var cx = Math.max(pad, Math.min(W - pad, px(out[0])));
+  var cy = Math.max(pad, Math.min(H - pad, py(out[1])));
+  // Крест рисуется дважды: сперва толстым белым, потом тонким тёмным. Поверх
+  // четырёх тысяч точек одна линия теряется — под ней нужен просвет.
+  function cross(colour, width){
+    return '<line x1="' + (cx - 10).toFixed(1) + '" y1="' + cy.toFixed(1) +
+      '" x2="' + (cx + 10).toFixed(1) + '" y2="' + cy.toFixed(1) +
+      '" stroke="' + colour + '" stroke-width="' + width + '" stroke-linecap="round"></line>' +
+      '<line x1="' + cx.toFixed(1) + '" y1="' + (cy - 10).toFixed(1) +
+      '" x2="' + cx.toFixed(1) + '" y2="' + (cy + 10).toFixed(1) +
+      '" stroke="' + colour + '" stroke-width="' + width + '" stroke-linecap="round"></line>';
+  }
+  var tx = Math.min(W - 62, cx + 13), ty = Math.max(14, cy - 12);
+  chart.innerHTML = MAP_BASE +
+    '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) +
+    '" r="11" fill="var(--plane)" opacity="0.85"></circle>' +
+    cross('var(--plane)', 5) + cross('var(--ink)', 2.2) +
+    '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) +
+    '" stroke="var(--plane)" stroke-width="3.5" fill="none" ' +
+    'font-size="12" font-weight="700">это дело</text>' +
+    '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) +
+    '" fill="var(--ink)" stroke="none" font-size="12" font-weight="700">это дело</text>';
 }
 
 // ── атлас: лес из прогона обходится браузером, как и основная модель ──
@@ -1278,6 +1347,40 @@ def sec_validation(snap: dict[str, Any]) -> str:
     )
 
 
+def map_block() -> str:
+    """Карта популяции под регуляторами: где лежит новое дело среди четырёх тысяч.
+
+    Девять величин — это девятимерное пространство, и показать его нельзя.
+    PCA сворачивает его в плоскость: две оси, вдоль которых разброс дел
+    наибольший. Точка нового дела считается тем же преобразованием прямо в
+    браузере, поэтому она двигается вместе с регуляторами.
+    """
+    data = D.population_map()
+    if not data:
+        return ""
+    cases = data["cases"]
+    share = sum(data["explained"])
+    return (
+        "<h4>Где это дело среди четырёх тысяч</h4>"
+        f"<p>Каждая точка — одно из {thousands(cases['total'])} дел полигона: "
+        f"{thousands(cases['legit'])} честных, {thousands(cases['pyramid'])} пирамид, "
+        f"из них {thousands(cases['borderline'])} пограничных — тех, про которые "
+        "генератор сам не уверен. Девять величин свёрнуты в плоскость методом "
+        f"главных компонент; две оси держат {pct(share, 0)} разброса, остальное "
+        "в эту картинку не поместилось. Чёрный крест — дело, собранное "
+        "регуляторами выше.</p>"
+        "<div class='legend'><span class='key'><i class='s1'></i>честные</span>"
+        "<span class='key'><i class='s2'></i>пирамиды</span>"
+        "<span class='key'><i class='s3'></i>пограничные</span></div>"
+        "<figure class='fig'><svg id='map-chart' viewBox='0 0 640 380' class='chart' "
+        "role='img' aria-label='карта популяции'></svg></figure>"
+        + limit(f"Две оси держат {pct(share, 0)} разброса: близкие на картинке дела "
+                "не обязаны быть близкими на самом деле. Карта показывает соседство, "
+                "а не расстояние.")
+        + source("artifacts/population_map.json")
+    )
+
+
 def sec_manual(snap: dict[str, Any]) -> str:
     # Начальные значения — не «типичная пирамида», а точка, где движок даёт
     # примерно 0.5. Взяты бинарным поиском по отрезку между явно честным и явно
@@ -1311,6 +1414,7 @@ def sec_manual(snap: dict[str, Any]) -> str:
         "страницей и сервисом проверяется тестом и не превышает 1e-5.",
         f"<form id='manual' class='form'>{fields}</form>"
         "<div id='manual-out' class='out'></div>"
+        + map_block()
         + limit("Пороги 0.4 и 0.7 в ответе зашиты в старом движке и не калиброваны под "
                 "заданную полноту; рабочий порог выбирается прогоном и показан в разделе "
                 "«Валидация».")
@@ -1906,6 +2010,7 @@ def payload(snap: dict[str, Any]) -> str:
         "feature_ru": FEATURE_RU,
         "model": D.scorer(),
         "atlas": D.atlas(),
+        "map": D.population_map(),
     }
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 
