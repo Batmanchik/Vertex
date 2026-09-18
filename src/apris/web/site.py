@@ -886,6 +886,94 @@ function setupManual(){
   run();
 }
 
+// ── атлас: лес из прогона обходится браузером, как и основная модель ──
+// Дерево sklearn лежит массивами: feature[i] < 0 — лист, иначе сравнение с
+// threshold[i] и переход в left/right. Ответ леса — среднее по деревьям.
+function runForest(forest, values){
+  var total = 0;
+  for (var t = 0; t < forest.trees.length; t++){
+    var tree = forest.trees[t], node = 0;
+    while (tree.feature[node] >= 0){
+      node = values[tree.feature[node]] <= tree.threshold[node]
+        ? tree.left[node] : tree.right[node];
+    }
+    total += tree.value[node];
+  }
+  return total / forest.trees.length;
+}
+
+function setupAtlas(){
+  var form = el('atlas-form'), result = el('atlas-out'), chart = el('atlas-chart');
+  var atlas = DATA.atlas;
+  if (!form || !result || !chart || !atlas) return;
+
+  var bins = atlas.bins, illicit = atlas.histogram.illicit, licit = atlas.histogram.licit;
+  var topI = Math.max.apply(null, illicit), topL = Math.max.apply(null, licit);
+  var W = 640, H = 200, pad = 24, floor = H - 28, wide = (W - pad * 2) / bins;
+
+  // Столбцы стоят рядом, а не друг на друге: наложенные, они сливаются в один
+  // ряд, и различить классы на экране нельзя. Каждая гистограмма нормирована
+  // на свой максимум — незаконных дел в восемь раз меньше, и в общем масштабе
+  // их не видно вовсе.
+  function bars(counts, top, css, offset){
+    var out = '', half = (wide - 1) / 2;
+    for (var i = 0; i < counts.length; i++){
+      var h = top ? (counts[i] / top) * (floor - 16) : 0;
+      out += '<rect class="bar ' + css + '" x="' +
+        (pad + i * wide + offset * half).toFixed(1) +
+        '" y="' + (floor - h).toFixed(1) + '" width="' + half.toFixed(1) +
+        '" height="' + h.toFixed(1) + '" rx="0.5"></rect>';
+    }
+    return out;
+  }
+  var base = bars(illicit, topI, 's2', 0) + bars(licit, topL, 's4', 1);
+  for (var g = 0; g <= 4; g++){
+    var x = pad + (W - pad * 2) * (g / 4);
+    base += '<text class="tick" x="' + x.toFixed(0) + '" y="' + (H - 8) +
+      '" text-anchor="middle">' + (g / 4).toFixed(2) + '</text>';
+  }
+
+  function share(counts, score){
+    // Доля дел ниже оценки. Внутри корзины считается пропорционально, иначе
+    // подпись стоит на месте, пока точка не перепрыгнет в соседнюю корзину.
+    var total = 0, below = 0, exact = score * bins;
+    var edge = Math.min(bins - 1, Math.floor(exact)), part = exact - edge;
+    for (var i = 0; i < counts.length; i++){
+      total += counts[i];
+      if (i < edge) below += counts[i];
+      else if (i === edge) below += counts[i] * part;
+    }
+    return total ? below / total : 0;
+  }
+
+  function run(){
+    var values = atlas.features.map(function(name){
+      var input = form.querySelector('input[data-atlas="' + name + '"]');
+      return input ? parseFloat(input.value) : atlas.bounds[name].median;
+    });
+    var score = runForest(atlas.forest, values);
+    var x = pad + (W - pad * 2) * Math.max(0, Math.min(1, score));
+    chart.innerHTML = base +
+      '<line class="ref" x1="' + x.toFixed(1) + '" y1="6" x2="' + x.toFixed(1) +
+      '" y2="' + floor + '"></line>' +
+      '<text class="bvalue" x="' + Math.min(W - 60, x + 6).toFixed(1) +
+      '" y="16">ваше дело</text>';
+    result.innerHTML = '<b>' + (score * 100).toFixed(1) + ' %</b>' +
+      'выше, чем у ' + (share(illicit, score) * 100).toFixed(0) +
+      ' % незаконных дел и у ' + (share(licit, score) * 100).toFixed(0) +
+      ' % обычных';
+  }
+  form.addEventListener('input', function(){
+    form.querySelectorAll('input[data-atlas]').forEach(function(input){
+      var target = form.querySelector('output[data-atlasout="' + input.dataset.atlas + '"]');
+      if (target) target.textContent = input.value;
+    });
+    run();
+  });
+  form.addEventListener('submit', function(event){ event.preventDefault(); run(); });
+  run();
+}
+
 // ── общая проводка регуляторов ────────────────────────────────────────
 function wire(names, render){
   var found = false;
@@ -920,6 +1008,7 @@ function wire(names, render){
   wire(['prevalence', 'recall'], renderRarity);
   wire(['ev-funders', 'ev-atms'], renderEvasion);
   setupManual();
+  setupAtlas();
 })();
 })();
 """
@@ -931,7 +1020,8 @@ function wire(names, render){
 NAV: list[tuple[str, list[tuple[str, str]]]] = [
     ("Система", [("overview", "Обзор"), ("pipeline", "Конвейер"), ("world", "Мир"),
                  ("shapes", "Схемы"), ("discovery", "Поиск сетей"), ("dossier", "Досье"),
-                 ("validation", "Валидация"), ("manual", "Проверить")]),
+                 ("validation", "Валидация"), ("manual", "Проверить"),
+                 ("atlas", "Атлас дел")]),
     ("Измерения", [("queue", "Очередь"), ("ladder", "Лестница миров"),
                    ("evasion", "Уклонение"), ("rarity", "Редкость"),
                    ("rules", "Правила"), ("ceiling", "Потолки"),
@@ -1228,6 +1318,62 @@ def sec_manual(snap: dict[str, Any]) -> str:
                 "ответ упирается в ноль или единицу и перестаёт отзываться на сдвиг: "
                 "это свойство старого движка, а не измерение.")
         + source("artifacts/model.joblib"),
+    )
+
+
+def sec_atlas(snap: dict[str, Any]) -> str:
+    """Где лежат четыре тысячи реальных дел и куда попадёт ваше.
+
+    Самый быстрый способ показать работу системы за две минуты: не таблица
+    метрик, а распределение оценок по реальным делам Elliptic и точка,
+    которая двигается вместе с регуляторами.
+    """
+    data = D.atlas()
+    if not data:
+        return section("atlas", "Атлас дел", "Прогона нет.", "")
+
+    cases = data["cases"]
+    # Не любые четыре из шестнадцати, а те, что действительно двигают ответ:
+    # замерено прогоном каждого признака по его диапазону при остальных на
+    # медиане. hub_share тянет ответ на 31 пункт, source_share на 20,
+    # fanout_share на 13, sink_share на 7; остальные двенадцать — меньше пяти,
+    # и регулятор под ними на экране не отзывался бы.
+    shown = ("hub_share", "source_share", "fanout_share", "sink_share")
+    titles = {
+        "hub_share": "поток стянут в узлы-концентраторы",
+        "source_share": "доля узлов, только отдающих деньги",
+        "fanout_share": "разветвление потока",
+        "sink_share": "доля узлов, только принимающих",
+    }
+    fields = "".join(
+        f"<label class='fld'><span>{esc(titles[name])}</span>"
+        f"<input type='range' min='{data['bounds'][name]['min']}' "
+        f"max='{data['bounds'][name]['max']}' "
+        f"value='{data['bounds'][name]['median']}' step='0.01' data-atlas='{name}'>"
+        f"<small><output data-atlasout='{name}'>"
+        f"{data['bounds'][name]['median']}</output> · {name}</small></label>"
+        for name in shown
+    )
+    return section(
+        "atlas", "Атлас дел",
+        f"Каждое из {thousands(cases['illicit'])} незаконных и "
+        f"{thousands(cases['licit'])} обычных дел набора Elliptic оценено моделью, "
+        "которая его не видела: это те же складки purged walk-forward, которыми "
+        "получено 0.687. Гистограммы нормированы каждая на свой класс — иначе "
+        "незаконных дел просто не видно, их в восемь раз меньше. Соберите дело "
+        "регуляторами, и чёрная черта покажет, куда оно попадает среди настоящих.",
+        "<div class='legend'><span class='key'><i class='s2'></i>незаконные дела</span>"
+        "<span class='key'><i class='s4'></i>обычные дела</span></div>"
+        "<figure class='fig'><svg id='atlas-chart' viewBox='0 0 640 200' class='chart' "
+        "role='img' aria-label='распределение оценок'></svg></figure>"
+        f"<form id='atlas-form' class='form'>{fields}</form>"
+        "<div id='atlas-out' class='out'></div>"
+        + limit("Остальные двенадцать признаков формы стоят на медиане набора: "
+                "регуляторов на экране четыре, а модель считает по шестнадцати.")
+        + limit("Точку считает модель, обученная на всех делах сразу, — она нужна "
+                "только для новой точки. Отчётные числа получены из складок, где "
+                "дело оценивает модель, которая его не видела.")
+        + source("artifacts/case_atlas.json"),
     )
 
 
@@ -1759,13 +1905,14 @@ def payload(snap: dict[str, Any]) -> str:
         "cases": cases,
         "feature_ru": FEATURE_RU,
         "model": D.scorer(),
+        "atlas": D.atlas(),
     }
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 
 
 SECTIONS = (
     sec_overview, sec_pipeline, sec_world, sec_shapes, sec_discovery, sec_dossier, sec_validation,
-    sec_manual, sec_queue, sec_ladder, sec_evasion, sec_rarity, sec_rules, sec_ceiling,
+    sec_manual, sec_atlas, sec_queue, sec_ladder, sec_evasion, sec_rarity, sec_rules, sec_ceiling,
     sec_curves, sec_panel, sec_branches, sec_flow_weight, sec_elliptic, sec_defects,
     sec_gap, sec_sources,
 )

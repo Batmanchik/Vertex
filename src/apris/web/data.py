@@ -785,6 +785,15 @@ def branches() -> list[Branch]:
     return out
 
 
+def atlas() -> dict[str, Any] | None:
+    """Атлас дел Elliptic: распределение оценок и модель для новой точки.
+
+    Собирается scripts/make_case_atlas.py. Без файла раздел честно скажет,
+    что прогона нет, — как и любой другой раздел витрины.
+    """
+    return _load("case_atlas.json")
+
+
 def scorer() -> dict[str, Any] | None:
     """Модель в форме, которую считает браузер, или ``None``, если её нет.
 

@@ -16,7 +16,9 @@ import re
 import pytest
 
 from apris.web import data
-from apris.web.site import Bar, Line, build, chart_bars, chart_line, esc, pct, table
+from apris.web.site import (
+    Bar, Line, build, chart_bars, chart_line, esc, pct, table, thousands,
+)
 
 
 def test_the_page_builds_and_carries_every_section() -> None:
@@ -264,3 +266,26 @@ def test_the_branches_the_work_claims_are_on_the_published_page() -> None:
     assert "Обученных ветвей нет" not in section
     for value in ("0.985", "0.986"):
         assert value in section, f"метрика ветви {value} не доехала до страницы"
+
+
+def test_the_atlas_places_a_case_among_real_ones() -> None:
+    """Раздел бесполезен, если гистограмма пуста или регуляторы не те.
+
+    Регуляторов на экране четыре из шестнадцати признаков, и выбраны они не
+    на глаз: каждый двигает ответ модели минимум на семь пунктов, остальные
+    двенадцать — меньше пяти. Если набор подменят, проверка упадёт.
+    """
+    page = build()
+    start = page.index('<section id="atlas"')
+    section_html = page[start : page.index("</section>", start)]
+
+    assert "Прогона нет" not in section_html
+    for name in ("hub_share", "source_share", "fanout_share", "sink_share"):
+        assert f"data-atlas='{name}'" in section_html, f"регулятор {name} потерян"
+
+    atlas = data.atlas()
+    assert atlas is not None
+    assert atlas["cases"]["illicit"] > 3000
+    assert len(atlas["histogram"]["illicit"]) == atlas["bins"]
+    assert sum(atlas["histogram"]["illicit"]) == atlas["cases"]["illicit"]
+    assert thousands(atlas["cases"]["illicit"]) in section_html
