@@ -1,0 +1,48 @@
+{
+  "artifact_version": "cheops-sequence-v2-events",
+  "generated_at": "2026-09-14T06:27:51.302274+00:00",
+  "trained_on": "events (candidates from blind discovery)",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "preset": "full",
+  "fit_worlds": 4,
+  "calibration_rows": 148,
+  "within_world": {
+    "pooled_roc_auc": 0.5541,
+    "pooled_heuristic_roc_auc": 0.7773,
+    "pooled_lift": -0.2232,
+    "per_world_roc_auc": [
+      0.5556,
+      0.6364,
+      0.5821,
+      0.4773,
+      0.3889
+    ],
+    "per_world_min": 0.3889,
+    "per_world_max": 0.6364,
+    "worlds": 5,
+    "rows": 138,
+    "positives": 50
+  },
+  "across_worlds": {
+    "pooled_roc_auc": 0.9858,
+    "pooled_heuristic_roc_auc": 0.4996,
+    "pooled_lift": 0.4862,
+    "per_world_roc_auc": [
+      0.9698,
+      0.9932,
+      0.9932,
+      0.9874,
+      0.9885
+    ],
+    "worlds": 5,
+    "rows": 680,
+    "positives": 101
+  },
+  "note": "within_world is depressed by how a case is dated: a candidate carries the time of its last event, so month-long structures pile up at the end of the timeline and the fraud share moves from 2.9 % to 33.3 % between fit and test. across_worlds has no such shift but does not test order inside a world. Read both."
+}

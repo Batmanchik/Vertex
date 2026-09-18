@@ -21,8 +21,11 @@ htmlcov/
 build/
 dist/
 mlruns/
+# Обученные ветви весят по 350 КБ и никому, кроме сервиса, не нужны.
+# А вот их метрики нужны витрине: без файла раздел «Ветви» честно пишет
+# «обученных ветвей нет», и опубликованная страница начинает противоречить
+# работе, где стоят 0.985 и 0.986. Поэтому модели мимо, метрики в репозиторий.
 artifacts/cheops_v2_*.joblib
-artifacts/cheops_v2_*.json
 
 # External datasets: downloaded on demand, never committed.
 # elliptic_txs_features.csv alone is ~690 MB.
