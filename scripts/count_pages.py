@@ -115,7 +115,20 @@ def main(path: str) -> int:
     document = etree.fromstring(archive.read("word/document.xml"))
     styles = Styles(archive.read("word/styles.xml"))
     body = document.find(f"{W}body")
-    width, height = usable(list(document.iter(f"{W}sectPr"))[-1])
+
+    # Разделов может быть несколько, и у каждого своя страница. Свойства
+    # раздела лежат в абзаце, которым он заканчивается, а свойства
+    # последнего — в конце тела. Сшитый файл «работа + дневник» именно
+    # такой, и считать его по одной геометрии значит считать неверно.
+    sections = [
+        node.find(f"{W}pPr/{W}sectPr")
+        for node in body.iter(f"{W}p")
+        if node.find(f"{W}pPr/{W}sectPr") is not None
+    ]
+    sections.append(body.find(f"{W}sectPr"))
+    sections = [node for node in sections if node is not None]
+    width, height = usable(sections[0])
+    section_index = 0
 
     pages = 1
     cursor = 0.0
@@ -156,6 +169,13 @@ def main(path: str) -> int:
                 wasted += height - cursor
                 pages += 1
                 cursor = 0.0
+            if node.find(f"{W}pPr/{W}sectPr") is not None:
+                # Раздел закончился: дальше своя страница со своими полями.
+                wasted += max(0.0, height - cursor)
+                pages += 1
+                cursor = 0.0
+                section_index = min(section_index + 1, len(sections) - 1)
+                width, height = usable(sections[section_index])
         elif tag == "tbl":
             # Ширина колонок берётся из сетки таблицы, а не делится поровну:
             # в бланке дневника колонка «Ход работ» вчетверо шире соседних, и
