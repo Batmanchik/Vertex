@@ -67,7 +67,7 @@ FIGURE = ROOT / "artifacts" / "figures" / "elliptic_arms.png"
 # работе это формулы, вставленные как изображения (высота от 0.25 дюйма);
 # если сжать и их, формулы станут мельче текста вокруг. Порог отделяет
 # график от формулы по высоте.
-FIGURE_SCALE = 0.72
+FIGURE_SCALE = 0.85
 FORMULA_HEIGHT_EMU = 914400  # один дюйм: ниже этого — формула, не график
 
 # ── Замены текста ────────────────────────────────────────────────────
@@ -430,7 +430,10 @@ def drop_diary(path: Path) -> int:
 # снимается: список источников может идти сразу за заключением, это обычная
 # практика. Проверено счётчиком: масштаб рисунков на итог уже не влияет,
 # страницы держат именно разрывы.
-BREAK_BEFORE_TO_DROP = "СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ И ЛИТЕРАТУРЫ"
+BREAKS_BEFORE_TO_DROP = [
+    "ЗАКЛЮЧЕНИЕ",
+    "СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ И ЛИТЕРАТУРЫ",
+]
 
 
 def drop_page_break_before(path: Path, heading: str) -> bool:
@@ -501,8 +504,9 @@ def main() -> int:
     print(f"  убрано строк дневника: {rows}")
     diary = drop_diary(target)
     print(f"  раздел «Дневник» убран, элементов: {diary}")
-    if drop_page_break_before(target, BREAK_BEFORE_TO_DROP):
-        print("  разрыв перед списком источников снят")
+    for heading in BREAKS_BEFORE_TO_DROP:
+        if drop_page_break_before(target, heading):
+            print(f"  снят разрыв страницы перед «{heading.split()[0].lower()}…»")
 
     import docx
 

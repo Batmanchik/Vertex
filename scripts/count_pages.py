@@ -157,17 +157,29 @@ def main(path: str) -> int:
                 pages += 1
                 cursor = 0.0
         elif tag == "tbl":
+            # Ширина колонок берётся из сетки таблицы, а не делится поровну:
+            # в бланке дневника колонка «Ход работ» вчетверо шире соседних, и
+            # деление поровну завышало высоту строк на страницы.
+            grid = [
+                int(col.get(f"{W}w")) / 20
+                for col in node.iter(f"{W}gridCol")
+                if col.get(f"{W}w")
+            ]
             for row in node.iter(f"{W}tr"):
                 cells = [
                     "".join(t.text or "" for t in cell.iter(f"{W}t"))
                     for cell in row.iter(f"{W}tc")
                 ]
-                per_cell = max(1, len(cells))
-                widest = max(
-                    (math.ceil(len(c) / max(8.0, CHARS_PER_LINE_AT_12PT / per_cell)) for c in cells),
-                    default=1,
-                )
-                place(max(1, widest) * 12 * ASCENT * 1.15 + ROW_PADDING_PT, atomic=True)
+                lines = 1
+                for index, text in enumerate(cells):
+                    column = grid[index] if index < len(grid) else width / max(1, len(cells))
+                    per_line = max(4.0, CHARS_PER_LINE_AT_12PT * (column / 403.0))
+                    lines = max(lines, math.ceil(len(text) / per_line) if text else 1)
+                # Строка таблицы переносится между страницами, если в ней нет
+                # w:cantSplit. В обоих документах проекта его нет, поэтому
+                # считать строку неделимой — значит завышать объём.
+                whole = row.find(f"{W}trPr/{W}cantSplit") is not None
+                place(lines * 12 * ASCENT * 1.15 + ROW_PADDING_PT, atomic=whole)
             place(6.0, atomic=False)
 
     print(f"{path.split('/')[-1]}")
