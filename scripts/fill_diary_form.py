@@ -163,23 +163,43 @@ def fill_header(document: object) -> int:
 
 
 def answer(cell: object, text: str) -> None:
-    """Дописать ответ под вопросом, сохранив оформление ячейки.
+    """Вписать ответ в место, уже отведённое под него бланком.
 
-    Отступы до и после ставятся в ноль: семнадцать добавленных абзацев со
-    стандартным отступом в 10 пунктов давали четверть страницы пустоты, а
-    бланк обязан остаться трёхстраничным.
+    Бланк рассчитан на рукописный ответ, поэтому под каждым вопросом стоит
+    несколько пустых абзацев — это и есть отведённое место. Первая версия
+    дописывала ответ ПОСЛЕ них, и дневник рос на четыре страницы: пустое
+    место оставалось на месте, а текст добавлялся сверху. Теперь ответ
+    занимает первый же пустой абзац, а лишние убираются.
     """
     from docx.shared import Pt
 
-    source = cell.paragraphs[-1]  # type: ignore[attr-defined]
-    new = cell.add_paragraph()  # type: ignore[attr-defined]
-    new.paragraph_format.alignment = source.paragraph_format.alignment
-    new.paragraph_format.space_before = Pt(0)
-    new.paragraph_format.space_after = Pt(0)
-    new.paragraph_format.line_spacing = 1.0
-    run = new.add_run(text)
+    paragraphs = cell.paragraphs  # type: ignore[attr-defined]
+    # Пустые абзацы считаются только после последней строки текста: в ячейке
+    # сначала идёт вопрос, потом пояснение к нему, и лишь затем место под
+    # ответ. Первая версия занимала пустой абзац между вопросом и пояснением,
+    # и ответ вставал посреди самого вопроса.
+    last = max(
+        (index for index, item in enumerate(paragraphs) if item.text.strip()),
+        default=-1,
+    )
+    blanks = [item for item in paragraphs[last + 1:] if not item.text.strip()]
+    if blanks:
+        target, extras = blanks[0], blanks[1:]
+        for extra in extras:
+            extra._element.getparent().remove(extra._element)
+    else:
+        target = cell.add_paragraph()  # type: ignore[attr-defined]
+
+    for run in list(target.runs):
+        run._element.getparent().remove(run._element)
+    target.paragraph_format.space_before = Pt(0)
+    target.paragraph_format.space_after = Pt(0)
+    target.paragraph_format.line_spacing = 1.0
+    target.paragraph_format.first_line_indent = Pt(0)
+    run = target.add_run(text)
     run.italic = True
-    if source.runs:
+    source = next((p for p in paragraphs if p.runs), None)
+    if source is not None:
         run.font.name = source.runs[0].font.name
         run.font.size = source.runs[0].font.size
 
