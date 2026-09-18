@@ -220,6 +220,13 @@ REPLACEMENTS: list[tuple[str, str, str]] = [
      "Проведена валидация на Elliptic (203 769 транзакций) по методологии Purged walk-forward: признаки формы дают 0.687 против 0.454 у контроля, запас 0.233.",
      "заключение, Elliptic"),
 
+    # ── введение: убрать строку про единственного школьника ──
+    # Она про автора, а не про работу, и читается так, будто работу сделали
+    # за него, а его вывели на сцену.
+    ("прошел все этапы отбора и вошел в Топ-5 лучших решений. Автор оказался единственным школьником среди финалистов.",
+     "прошел все этапы отбора и вошел в Топ-5 лучших решений.",
+     "введение, про автора"),
+
     # ── дневник ──
     ("Внешняя валидация на массиве Elliptic не выполнена: загрузчик написан, но самих данных в проекте нет и прогон не запускался. Числа Recall 0.96, Precision 0.92, ROC-AUC 0.99 из ранней версии работы ничем не подтверждены. Все результаты пересобраны на собственных прогонах.",
      "Внешняя валидация на массиве Elliptic выполнена: признаки формы дают ROC-AUC 0.687 против 0.454 у контроля с перемешанными метками, запас 0.233. Числа Recall 0.96, Precision 0.92, ROC-AUC 0.99 из ранней версии измерением не подтверждены и переведены в цель. Все результаты пересобраны на собственных прогонах.",
@@ -352,6 +359,27 @@ def drop_paragraphs(path: Path) -> int:
     return removed
 
 
+# Строки дневника, которые убираются целиком. Этап 7 — про оформление и
+# сборку витрины, то есть про подготовку работы, а не про исследование.
+DROP_TABLE_ROWS = ["Этап 7"]
+
+
+def drop_table_rows(path: Path) -> int:
+    """Удаление строк таблиц. ``document.paragraphs`` их не видит."""
+    import docx
+
+    document = docx.Document(str(path))
+    removed = 0
+    for table in document.tables:
+        for row in list(table.rows):
+            head = row.cells[0].text.strip()
+            if any(head.startswith(marker) for marker in DROP_TABLE_ROWS):
+                row._element.getparent().remove(row._element)
+                removed += 1
+    document.save(str(path))
+    return removed
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print(__doc__)
@@ -386,6 +414,8 @@ def main() -> int:
 
     removed = drop_paragraphs(target)
     print(f"  убрано абзацев-пересказов: {removed}")
+    rows = drop_table_rows(target)
+    print(f"  убрано строк дневника: {rows}")
 
     import docx
 
