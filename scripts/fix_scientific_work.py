@@ -77,22 +77,22 @@ FORMULA_HEIGHT_EMU = 914400  # один дюйм: ниже этого — фор
 REPLACEMENTS: list[tuple[str, str, str]] = [
     # ── абстракт, три языка ──
     ("Нәтижелері: жүйе Elliptic деректер жинағында (203 769 транзакция) сыналды: Recall 0.96, Precision 0.92, ROC-AUC 0.99.",
-     "Өлшенгені: полигонда (13 499 шот, 248 445 оқиға) ROC-AUC 0.940 және 0.991, ережелерде — 0.757 және 0.761; Elliptic жинағында пішін белгілері 0.687, бақылауда 0.454. Recall 0.96 және Precision 0.92 мақсат болып қалады (3.3-бөлім).",
+     "Өлшенгені: полигонда (13 499 шот) ROC-AUC 0.940 және 0.991, ережелерде — 0.757 және 0.761; Elliptic-те 0.687, бақылауда 0.454. Recall 0.96 және Precision 0.92 мақсат болып қалады.",
      "абстракт, казахский"),
     ("Жаңалығы: FIFO-салыстыруға сүйенетін және уақыт бойынша сөну функциясы арқылы заңсыз қаржы схемаларының бүкіл спектрін бір өлшемге келтіретін жаңа W параметрі ұсынылды.",
-     "Жаңалығы: пирамида мен айналдыру желісі әртүрлі ұстамамен түсірілген бір құбылыс ретінде сипатталды және бір модельмен табылады; міндет іс деңгейінде қойылды; шектің құны мен жалтарысқа төзімділік шегі өлшенді. W параметрі осы геометрияның метрикасы ретінде ұсынылды, бірақ тексеруден өтпеді (2.3-бөлім).",
+     "Жаңалығы: пирамида мен айналдыру желісі бір құбылыс ретінде сипатталды және бір модельмен табылады; міндет іс деңгейінде қойылды; шектің құны мен жалтарысқа төзімділік шегі өлшенді. W параметрі тексеруден өтпеді (2.3-бөлім).",
      "новизна, казахский"),
     ("Результаты: на 203 769 транзакциях датасета Elliptic система показала Recall 0.96 и Precision 0.92.",
-     "Измерено: на полигоне из 13 499 счетов и 248 445 событий ROC-AUC 0.940 по счетам и 0.991 по группам против 0.757 и 0.761 у правил; на Elliptic (203 769 транзакций) признаки формы дают 0.687 против 0.454 у контроля. Recall 0.96 и Precision 0.92 остаются целью (раздел 3.3).",
+     "Измерено: на полигоне из 13 499 счетов ROC-AUC 0.940 по счетам и 0.991 по группам против 0.757 и 0.761 у правил; на Elliptic 0.687 против 0.454 у контроля. Recall 0.96 и Precision 0.92 остаются целью.",
      "абстракт, русский"),
     ("Новизна: параметр W на основе FIFO-сопоставления, который укладывает весь спектр противоправных схем, от медленных пирамид до секундного вывода, на одну временную шкалу.",
-     "Новизна: пирамида и сеть обналичивания описаны как одно явление, снятое с разной выдержкой, и находятся одной моделью; задача поставлена на уровне дела, а не счета; измерены цена порога при реальной редкости и граница устойчивости к уклонению. Параметр W предлагался как метрика этой геометрии, но проверки не выдержал (раздел 2.3).",
+     "Новизна: пирамида и сеть обналичивания описаны как одно явление и находятся одной моделью; задача поставлена на уровне дела; измерены цена порога и граница устойчивости к уклонению. Параметр W проверки не выдержал (раздел 2.3).",
      "новизна, русский"),
     ("Results: 0.96 Recall and 0.92 Precision on the Elliptic dataset (203,769 transactions).",
-     "Measured: on a testbed of 13 499 accounts and 248 445 events, ROC-AUC 0.940 on accounts and 0.991 on groups against 0.757 and 0.761 for a rule engine; on Elliptic (203,769 transactions) shape-only features reach 0.687 against 0.454 for a control. 0.96 Recall and 0.92 Precision remain a target.",
+     "Measured: on a testbed of 13 499 accounts, ROC-AUC 0.940 on accounts and 0.991 on groups against 0.757 and 0.761 for a rule engine; on Elliptic 0.687 against 0.454 for a control. 0.96 Recall and 0.92 Precision remain a target.",
      "абстракт, английский"),
     ("Novelty: the W parameter, based on FIFO matching, which places the full spectrum of criminal schemes, from slow pyramids to cash-out within seconds, on a single temporal scale.",
-     "Novelty: a pyramid and a cash-out network are described as one phenomenon at different exposures and found by a single model; the task is posed at the level of a case; the cost of the threshold at realistic rarity and the boundary of evasion resistance are measured. The W parameter was proposed as the metric of that geometry but did not survive measurement (section 2.3).",
+     "Novelty: a pyramid and a cash-out network are described as one phenomenon and found by a single model; the task is posed at the level of a case; the cost of the threshold and the boundary of evasion resistance are measured. The W parameter did not survive measurement (section 2.3).",
      "новизна, английский"),
 
     # ── сжатие длинных абзацев исходника: смысл и числа целиком, слов меньше ──
@@ -265,6 +265,8 @@ DROP_PARAGRAPHS = [
     "Проще говоря, это как понять, что «Алибек У.»",
     "Проще говоря, три модели голосуют",
     "Проще говоря, система обязана объяснить",
+    "Проще говоря, мы смотрим на «друзей» счета",
+    "Проще говоря, нельзя дать модели посмотреть завтрашние ответы",
 ]
 
 
@@ -431,6 +433,8 @@ def drop_diary(path: Path) -> int:
 # практика. Проверено счётчиком: масштаб рисунков на итог уже не влияет,
 # страницы держат именно разрывы.
 BREAKS_BEFORE_TO_DROP = [
+    "1. ТЕОРЕТИКО-МЕТОДОЛОГИЧЕСКИЕ ОСНОВЫ СЕТЕВОГО АНТИФРОДА",
+    "2. МЕТОДОЛОГИЯ И АЛГОРИТМИЧЕСКИЕ ИННОВАЦИИ СИСТЕМЫ «VERTEX»",
     "ОГЛАВЛЕНИЕ",
     "ВВЕДЕНИЕ",
     "ЗАКЛЮЧЕНИЕ",
