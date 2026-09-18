@@ -195,6 +195,14 @@ def main(path: str) -> int:
                     column = grid[index] if index < len(grid) else width / max(1, len(cells))
                     per_line = max(4.0, CHARS_PER_LINE_AT_12PT * (column / 403.0))
                     lines = max(lines, math.ceil(len(text) / per_line) if text else 1)
+                # Пустые абзацы внутри ячейки тоже занимают строки: в школьном
+                # бланке их десятки между вопросом и местом для ответа.
+                for cell in row.iter(f"{W}tc"):
+                    blanks = sum(
+                        1 for paragraph in cell.iter(f"{W}p")
+                        if not "".join(t.text or "" for t in paragraph.iter(f"{W}t")).strip()
+                    )
+                    lines = max(lines, lines + blanks - 1 if blanks > 1 else lines)
                 # Строка таблицы переносится между страницами, если в ней нет
                 # w:cantSplit. В обоих документах проекта его нет, поэтому
                 # считать строку неделимой — значит завышать объём.

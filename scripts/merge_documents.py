@@ -87,8 +87,43 @@ def split_sections(merged: Path, second: Path) -> bool:
         body.remove(tail)
         body.append(copy.deepcopy(own))
 
+    restore_layout(body, boundary)
     document.save(str(merged))
     return True
+
+
+def restore_layout(body: object, boundary: object) -> int:
+    """Вернуть второй части её собственную вёрстку абзаца.
+
+    Стиль по умолчанию у бланка называется «a», у работы — «Normal».
+    При склейке стили сводятся, и все абзацы дневника начинают наследовать
+    «Normal» работы: межстрочный 1.3 вместо одинарного, отступ 4 пункта
+    после каждого абзаца и красная строка внутри ячеек таблицы. На двухстах
+    абзацах бланка это давало три лишние страницы — ровно ту разницу, из-за
+    которой Word показывал 24 вместо 20.
+
+    Поэтому вёрстка проставляется явно, а не через имя стиля: так она не
+    зависит от того, как именно сведутся стили.
+    """
+    from docx.shared import Pt
+
+    from docx.text.paragraph import Paragraph
+
+    seen = False
+    fixed = 0
+    for node in body:  # type: ignore[attr-defined]
+        if node is boundary:
+            seen = True
+        if not seen:
+            continue
+        for element in node.iter(f"{W}p"):
+            fmt = Paragraph(element, None).paragraph_format
+            fmt.line_spacing = 1.0
+            fmt.space_before = Pt(0)
+            fmt.space_after = Pt(0)
+            fmt.first_line_indent = Pt(0)
+            fixed += 1
+    return fixed
 
 
 def main() -> int:
