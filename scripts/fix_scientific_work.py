@@ -67,7 +67,7 @@ FIGURE = ROOT / "artifacts" / "figures" / "elliptic_arms.png"
 # работе это формулы, вставленные как изображения (высота от 0.25 дюйма);
 # если сжать и их, формулы станут мельче текста вокруг. Порог отделяет
 # график от формулы по высоте.
-FIGURE_SCALE = 0.85
+FIGURE_SCALE = 0.72
 FORMULA_HEIGHT_EMU = 914400  # один дюйм: ниже этого — формула, не график
 
 # ── Замены текста ────────────────────────────────────────────────────
@@ -380,6 +380,89 @@ def drop_table_rows(path: Path) -> int:
     return removed
 
 
+# Дневник выдаётся школой отдельным бланком и заполняется от руки, поэтому
+# собственный дневник из работы уходит целиком — вместе со строкой в
+# оглавлении и разрывом страницы перед ним.
+DIARY_HEADING = "ДНЕВНИК НАУЧНО-ИССЛЕДОВАТЕЛЬСКОГО ПРОЕКТА"
+
+
+def drop_diary(path: Path) -> int:
+    """Удаление раздела «Дневник» и его строки из оглавления."""
+    import docx
+
+    document = docx.Document(str(path))
+    body = document.element.body
+    children = list(body)
+
+    def text_of(node: object) -> str:
+        return "".join(
+            run.text or "" for run in node.iter(
+                "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t")
+        ).strip()
+
+    start = next(
+        (i for i, node in enumerate(children) if text_of(node) == DIARY_HEADING), None)
+    if start is None:
+        return 0
+
+    # Разрыв страницы перед заголовком держать не за чем.
+    if start and not text_of(children[start - 1]):
+        start -= 1
+
+    removed = 0
+    for node in children[start:]:
+        if node.tag.endswith("}sectPr"):
+            break
+        body.remove(node)
+        removed += 1
+
+    # Строка оглавления: тот же заголовок с номером страницы на конце.
+    for paragraph in list(document.paragraphs):
+        if paragraph.text.strip().startswith(DIARY_HEADING):
+            paragraph._element.getparent().remove(paragraph._element)
+            removed += 1
+
+    document.save(str(path))
+    return removed
+
+
+# Разрывы страниц перед разделами стоят по странице каждый. Один из них
+# снимается: список источников может идти сразу за заключением, это обычная
+# практика. Проверено счётчиком: масштаб рисунков на итог уже не влияет,
+# страницы держат именно разрывы.
+BREAK_BEFORE_TO_DROP = "СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ И ЛИТЕРАТУРЫ"
+
+
+def drop_page_break_before(path: Path, heading: str) -> bool:
+    """Убрать пустой абзац с разрывом страницы перед заголовком раздела."""
+    import docx
+
+    document = docx.Document(str(path))
+    body = document.element.body
+    children = list(body)
+
+    def text_of(node: object) -> str:
+        return "".join(
+            run.text or "" for run in node.iter(
+                "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t")
+        ).strip()
+
+    places = [i for i, node in enumerate(children) if text_of(node) == heading]
+    if not places:
+        return False
+    before = children[places[-1] - 1]
+    has_break = any(
+        node.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type") == "page"
+        for node in before.iter(
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br")
+    )
+    if not has_break or text_of(before):
+        return False
+    body.remove(before)
+    document.save(str(path))
+    return True
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print(__doc__)
@@ -416,6 +499,10 @@ def main() -> int:
     print(f"  убрано абзацев-пересказов: {removed}")
     rows = drop_table_rows(target)
     print(f"  убрано строк дневника: {rows}")
+    diary = drop_diary(target)
+    print(f"  раздел «Дневник» убран, элементов: {diary}")
+    if drop_page_break_before(target, BREAK_BEFORE_TO_DROP):
+        print("  разрыв перед списком источников снят")
 
     import docx
 
